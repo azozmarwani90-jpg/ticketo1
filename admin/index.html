@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticketo Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo <span class="admin-badge">ADMIN</span></a>
+            <div class="nav-search">
+                <input type="text" id="admin-search" placeholder="Search bookings, events, or users...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Dashboard</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="section-title">Admin Dashboard</h1>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #E91E63, #c2185b);">BK</div>
+                <div class="stat-info">
+                    <h3 id="total-bookings">0</h3>
+                    <p>Total Bookings</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10B981, #059669);">REV</div>
+                <div class="stat-info">
+                    <h3 id="total-revenue">0 SAR</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">USR</div>
+                <div class="stat-info">
+                    <h3 id="total-users">0</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">EVT</div>
+                <div class="stat-info">
+                    <h3 id="total-events">0</h3>
+                    <p>Active Events</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="bookings">Bookings</button>
+            <button class="tab-btn" data-tab="events">Events</button>
+            <button class="tab-btn" data-tab="users">Users</button>
+            <button class="tab-btn" data-tab="analytics">Analytics</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </div>
+
+        <div class="tab-content active" id="bookings-tab">
+            <div class="content-header">
+                <h2>All Bookings</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-status="all">All</button>
+                    <button class="filter-btn" data-status="confirmed">Confirmed</button>
+                    <button class="filter-btn" data-status="cancelled">Cancelled</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Event</th>
+                            <th>Date</th>
+                            <th>Tickets</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-content" id="events-tab">
+            <div class="content-header">
+                <h2>Manage Events</h2>
+                <button class="btn-primary" id="add-event-btn">Add New Event</button>
+            </div>
+            <div class="events-grid" id="admin-events-grid"></div>
+        </div>
+
+        <div class="tab-content" id="users-tab">
+            <div class="content-header">
+                <h2>User Management</h2>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Joined</th>
+                            <th>Bookings</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-content" id="analytics-tab">
+            <div class="content-header">
+                <h2>Analytics &amp; Reports</h2>
+            </div>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Revenue by Category</h3>
+                    <div id="revenue-by-category"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Bookings Over Time</h3>
+                    <div id="bookings-over-time"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Popular Events</h3>
+                    <div id="popular-events"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Recent Activity</h3>
+                    <div id="recent-activity"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="settings-tab">
+            <div class="content-header">
+                <h2>System Settings</h2>
+            </div>
+            <div class="settings-container">
+                <div class="settings-card">
+                    <h3>Database Management</h3>
+                    <p>Manage your database, export or import data</p>
+                    <div class="settings-actions">
+                        <button class="btn-primary" id="export-db-btn">Export Database</button>
+                        <button class="btn-primary" id="import-db-btn" style="background: #3B82F6;">Import Database</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3>Clear Data</h3>
+                    <p>Warning: This will delete all bookings, users, and events</p>
+                    <div class="settings-actions">
+                        <button class="btn-primary" id="clear-db-btn" style="background: #EF4444;">Clear All Data</button>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <h3>System Information</h3>
+                    <p>Database Status: <strong style="color: #10B981;">Active</strong></p>
+                    <p>Last Backup: <span id="last-backup">Never</span></p>
+                    <p>Storage Used: <span id="storage-used">0 KB</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Ticketo Admin Panel. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        if (!Auth.isLoggedIn() || !Auth.isAdmin()) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <script src="../js/admin.js"></script>
+</body>
+</html>

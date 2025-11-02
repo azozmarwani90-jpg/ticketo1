@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bundle &amp; Save Offer - Ticketo</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../events.html">Events</a></li>
+                <li class="auth-link"><a href="../signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="../signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="offer-page container" data-animate="up">
+        <header class="offer-hero" style="background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=1600&h=900&fit=crop');">
+            <div class="offer-hero-content">
+                <h1>Bundle &amp; Save</h1>
+                <p>Book two or more experiences in the same week and unlock an extra 20% discount on your total.</p>
+                <a href="../events.html" class="btn-primary">Start Building Your Bundle</a>
+            </div>
+        </header>
+
+        <section class="offer-details">
+            <h2>Steps to redeem</h2>
+            <ol>
+                <li>Add at least two eligible events to your cart within the same calendar week.</li>
+                <li>Enter <strong>BUNDLE20</strong> in the promo box during checkout.</li>
+                <li>The discount will automatically apply to the lowest-priced ticket in your bundle.</li>
+            </ol>
+
+            <h2>Eligibility</h2>
+            <p>
+                Eligible events display the <strong>BUNDLE20</strong> tag on their detail page. Mixed categories are welcome—combine concerts,
+                theatre, sports, and festivals however you like. Offer cannot be combined with other promo codes.
+            </p>
+
+            <div class="offer-cta">
+                <a href="../events.html?promo=BUNDLE20" class="btn-primary">Find BUNDLE20 Events</a>
+                <a href="../index.html" class="btn-secondary">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="confirmation-container" data-animate="up">
+        <div class="success-icon">
+            <span class="material-symbols-rounded" aria-hidden="true">task_alt</span>
+        </div>
+        <h1>Booking Confirmed!</h1>
+        <p class="confirmation-subtext">Your tickets have been successfully booked.</p>
+
+        <div class="confirmation-details">
+            <p><strong>Booking ID:</strong> <span id="conf-booking-id"></span></p>
+            <p><strong>Name:</strong> <span id="conf-name"></span></p>
+            <p><strong>Event:</strong> <span id="conf-event"></span></p>
+            <p><strong>Venue:</strong> <span id="conf-venue"></span></p>
+            <p><strong>Date:</strong> <span id="conf-date"></span></p>
+            <p><strong>Time:</strong> <span id="conf-time"></span></p>
+            <p><strong>Tickets:</strong> <span id="conf-tickets"></span></p>
+            <p class="confirmation-total"><strong>Total Paid:</strong> <span id="conf-total"></span></p>
+        </div>
+
+        <p class="confirmation-subtext">
+            A confirmation email has been sent to your email address with your ticket details.
+        </p>
+        <p id="email-preview-link" class="confirmation-subtext" style="display: none;">
+            <a id="email-preview-anchor" href="#" target="_blank" rel="noopener">View confirmation email (Ethereal)</a>
+        </p>
+
+        <div class="confirmation-actions">
+            <a href="index.html" class="btn-primary">Back to Home</a>
+            <a href="profile.html" class="btn-secondary">View My Bookings</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,149 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "category": "Concerts",
+      "city": "Riyadh",
+      "venue": "Riyadh Boulevard",
+      "date": "2025-11-15",
+      "time": "20:00",
+      "price": 350,
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "description": "Legendary evening at Riyadh Boulevard."
+    },
+    {
+      "id": 2,
+      "title": "The Godfather - Classic Cinema",
+      "category": "Movies",
+      "city": "Jeddah",
+      "venue": "VOX Cinemas Red Sea Mall",
+      "date": "2025-10-20",
+      "time": "19:30",
+      "price": 45,
+      "image": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&h=600&fit=crop",
+      "description": "Timeless masterpiece on big screen."
+    }
+  ],
+  "promotions": [
+    {
+      "id": "SAUDIDAY25",
+      "title": "Saudi Day 25% Off",
+      "discount": 25,
+      "active": true
+    },
+    {
+      "id": "STUDENT15",
+      "title": "Student 15% Off",
+      "discount": 15,
+      "active": true
+    }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "name": "Admin",
+      "email": "admin@ticketo.sa",
+      "password": "admin",
+      "role": "admin"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "b1761907361115",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T10:42:41.115Z"
+    },
+    {
+      "id": "b1761909324787",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T11:15:24.787Z"
+    },
+    {
+      "id": "b1761910377486",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T11:32:57.486Z"
+    },
+    {
+      "id": "b1761911037855",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T11:43:57.855Z"
+    },
+    {
+      "id": "b1761912929406",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T12:15:29.406Z"
+    },
+    {
+      "id": "b1761926187547",
+      "eventId": 1,
+      "title": "Abdul Majeed Abdullah Concert",
+      "venue": "Riyadh Boulevard",
+      "time": "20:00",
+      "image": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
+      "date": "2025-11-15",
+      "tickets": 1,
+      "total": 350,
+      "promo": null,
+      "name": "‪ ABDULAZIZ ALJOHANI",
+      "email": "yoimez420@gmail.com",
+      "status": "confirmed",
+      "bookedAt": "2025-10-31T15:56:27.547Z"
+    }
+  ]
+}

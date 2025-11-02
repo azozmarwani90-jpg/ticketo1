@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="en"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticketo - Premium Saudi Event Booking</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Category Bar -->
+    <section class="category-bar" data-animate="up">
+        <div class="categories">
+            <button class="category-item" type="button" data-category="Movies">
+                <span class="category-icon material-symbols-rounded" aria-hidden="true">movie</span>
+                <span class="category-label">Movies</span>
+            </button>
+            <button class="category-item" type="button" data-category="Sports">
+                <span class="category-icon material-symbols-rounded" aria-hidden="true">stadium</span>
+                <span class="category-label">Sports</span>
+            </button>
+            <button class="category-item" type="button" data-category="Concerts">
+                <span class="category-icon material-symbols-rounded" aria-hidden="true">music_note</span>
+                <span class="category-label">Concerts</span>
+            </button>
+            <button class="category-item" type="button" data-category="Theatre">
+                <span class="category-icon material-symbols-rounded" aria-hidden="true">theater_comedy</span>
+                <span class="category-label">Theatre</span>
+            </button>
+            <button class="category-item" type="button" data-category="Festivals">
+                <span class="category-icon material-symbols-rounded" aria-hidden="true">celebration</span>
+                <span class="category-label">Festivals</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Hero Slider -->
+    <section class="hero-slider" data-animate="fade">
+        <button class="slider-nav prev" type="button" aria-label="Previous slide">
+            <span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+        </button>
+        <button class="slider-nav next" type="button" aria-label="Next slide">
+            <span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+        </button>
+        
+        <div class="slide active" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&h=900&fit=crop');">
+            <div class="slide-content">
+                <h1>Weekend Flash Deals</h1>
+                <p>Save 30% on concerts, sports, and cinema tickets booked before Sunday midnight.</p>
+                <a href="offers/flash-deals.html" class="btn-primary">Browse Offer</a>
+            </div>
+        </div>
+        <div class="slide" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=1600&h=900&fit=crop');">
+            <div class="slide-content">
+                <h1>Bundle &amp; Save</h1>
+                <p>Book two or more experiences in the same week and unlock an extra 20% discount.</p>
+                <a href="offers/bundle-save.html" class="btn-primary">View Offer</a>
+            </div>
+        </div>
+        <div class="slide" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&h=900&fit=crop');">
+            <div class="slide-content">
+                <h1>Student Rewards</h1>
+                <p>Verify your student email and receive a SAR 50 promo code for select festivals.</p>
+                <a href="offers/student-rewards.html" class="btn-primary">View Offer</a>
+            </div>
+        </div>
+        
+        <div class="slider-dots">
+            <button class="slider-dot active"></button>
+            <button class="slider-dot"></button>
+            <button class="slider-dot"></button>
+        </div>
+    </section>
+
+    <div class="container">
+        <!-- Featured Events -->
+        <section data-animate="up">
+            <h2 class="section-title">Featured Events</h2>
+            <div class="events-grid" id="events-grid">
+                <!-- Events will be loaded dynamically -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+

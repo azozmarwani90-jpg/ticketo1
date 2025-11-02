@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <div class="auth-card" data-animate="up">
+            <div class="auth-header">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your Ticketo account</p>
+            </div>
+
+            <form id="signin-form" class="auth-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+
+                <div id="error-message" class="error-message"></div>
+
+                <button type="submit" class="btn-primary btn-block">Sign In</button>
+            </form>
+
+            <div class="auth-divider">
+                <span>OR</span>
+            </div>
+
+            <div class="auth-demo">
+                <p><strong>Demo Accounts:</strong></p>
+                <button class="demo-btn" onclick="quickLogin('admin')">Login as Admin</button>
+                <button class="demo-btn" onclick="quickLogin('user')">Login as User</button>
+            </div>
+
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+    <script>
+        // Create demo accounts if they don't exist
+        if (!DB.getUserByEmail('admin@ticketo.com')) {
+            DB.addUser({
+                name: 'Admin User',
+                email: 'admin@ticketo.com',
+                password: Auth.hashPassword('admin123'),
+                role: 'admin'
+            });
+        }
+        
+        if (!DB.getUserByEmail('user@ticketo.com')) {
+            DB.addUser({
+                name: 'Demo User',
+                email: 'user@ticketo.com',
+                password: Auth.hashPassword('user123'),
+                role: 'user'
+            });
+        }
+
+        // Quick login function
+        function quickLogin(type) {
+            const credentials = type === 'admin' 
+                ? { email: 'admin@ticketo.com', password: 'admin123' }
+                : { email: 'user@ticketo.com', password: 'user123' };
+            
+            const result = Auth.signin(credentials.email, credentials.password);
+            
+            if (result.success) {
+                window.modalInstance.success('Login Successful', `Welcome, ${result.user.name}!`, () => {
+                    window.location.href = type === 'admin' ? 'admin/index.html' : 'index.html';
+                });
+            }
+        }
+
+        // Sign in form
+        document.getElementById('signin-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            const result = Auth.signin(email, password);
+            
+            if (result.success) {
+                window.modalInstance.success('Login Successful', `Welcome back, ${result.user.name}!`, () => {
+                    window.location.href = result.user.role === 'admin' ? 'admin/index.html' : 'index.html';
+                });
+            } else {
+                errorMessage.textContent = result.message;
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+

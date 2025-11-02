@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Booking - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="booking-container" data-animate="up">
+        <h1 class="page-title">Complete Your Booking</h1>
+
+        <!-- Booking Summary -->
+        <div class="booking-summary" data-animate="up">
+            <img id="booking-image" src="" alt="Event">
+            <div class="booking-info">
+                <h2 id="booking-title">Event Title</h2>
+                <div class="booking-details">
+                    <p><strong>Venue:</strong> <span id="booking-venue"></span></p>
+                    <p><strong>Date:</strong> <span id="booking-date"></span></p>
+                    <p><strong>Time:</strong> <span id="booking-time"></span></p>
+                    <p><strong>Price:</strong> <span id="booking-price"></span></p>
+                    <p class="booking-total"><strong>Total:</strong> <span id="booking-total"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Form -->
+        <form id="booking-form" class="booking-form" data-animate="up">
+            <h3 class="form-section-title">Your Information</h3>
+            
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" required placeholder="Enter your full name">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email">
+            </div>
+
+            <div class="form-group">
+                <label for="tickets">Number of Tickets *</label>
+                <input type="number" id="tickets" name="tickets" min="1" max="10" value="1" required>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+                Confirm Booking
+            </button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+
+    <script>
+      // Guard: ensure selectedEventId exists. If URL has ?id=..., persist it.
+      (function() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const idFromUrl = params.get('id');
+          const key = 'selectedEventId';
+          if (idFromUrl && !localStorage.getItem(key)) {
+            localStorage.setItem(key, String(idFromUrl));
+          }
+          // Optional hard stop: if still missing, keep user on events.html
+          if (!localStorage.getItem(key)) {
+            alert('Please choose an event before booking.');
+            window.location.href = 'events.html';
+          }
+        } catch(e) { /* no-op */ }
+      })();
+    </script>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+
+
+

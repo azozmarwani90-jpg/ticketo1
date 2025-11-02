@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="profile-container" data-animate="up">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-info">
+                <h2>My Dashboard</h2>
+                <p class="profile-subtitle">Manage your bookings and preferences</p>
+            </div>
+            <div class="profile-actions">
+                <button onclick="editProfile()" class="btn-tertiary">Edit Profile</button>
+                <a href="events.html" class="btn-primary">Browse Events</a>
+            </div>
+        </div>
+
+        <!-- User Stats -->
+        <div class="stats-grid profile-metrics">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #E91E63, #c2185b);">BK</div>
+                <div class="stat-info">
+                    <h3 id="user-total-bookings">0</h3>
+                    <p>Total Bookings</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10B981, #059669);">CF</div>
+                <div class="stat-info">
+                    <h3 id="user-confirmed-bookings">0</h3>
+                    <p>Confirmed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">SAR</div>
+                <div class="stat-info">
+                    <h3 id="user-total-spent">0 SAR</h3>
+                    <p>Total Spent</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Section -->
+        <div class="bookings-section">
+            <div class="bookings-section-header">
+                <h2>My Bookings</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-status="all">All</button>
+                    <button class="filter-btn" data-status="confirmed">Confirmed</button>
+                    <button class="filter-btn" data-status="cancelled">Cancelled</button>
+                </div>
+            </div>
+            <div id="bookings-list">
+                <!-- Bookings will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+
+
+
+
+

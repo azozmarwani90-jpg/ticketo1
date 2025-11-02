@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Rewards - Ticketo</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../events.html">Events</a></li>
+                <li class="auth-link"><a href="../signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="../signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="offer-page container" data-animate="up">
+        <header class="offer-hero" style="background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&h=900&fit=crop');">
+            <div class="offer-hero-content">
+                <h1>Student Rewards</h1>
+                <p>Verify your student email and receive a SAR 50 promo code for select festivals and cinema nights.</p>
+                <a href="../signup.html" class="btn-primary">Verify Student Email</a>
+            </div>
+        </header>
+
+        <section class="offer-details">
+            <h2>Claim your reward</h2>
+            <ol>
+                <li>Create or sign in to your Ticketo account using your university email address.</li>
+                <li>Check your inbox for the verification link and confirm your student status.</li>
+                <li>Your unique code <strong>STUDENT50</strong> will be added to your wallet within minutes.</li>
+            </ol>
+
+            <h2>Where you can use it</h2>
+            <p>
+                The STUDENT50 code is valid for one-time use on eligible festival and cinema tickets priced above SAR 120.
+                It cannot be stacked with other promotions or applied to bundle bookings.
+            </p>
+
+            <div class="offer-cta">
+                <a href="../events.html?promo=STUDENT50" class="btn-primary">Browse Student-Friendly Events</a>
+                <a href="../index.html" class="btn-secondary">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

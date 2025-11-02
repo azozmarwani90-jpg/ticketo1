@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="event-detail" data-animate="up">
+            <!-- Event Image -->
+            <div>
+                <img id="event-image" src="" alt="Event" class="event-image-large">
+            </div>
+
+            <!-- Event Details -->
+            <div class="event-details-content">
+                <h1 id="event-title">Event Title</h1>
+                
+                <div class="event-details-meta">
+                    <div>
+                        <span class="material-symbols-rounded detail-icon" aria-hidden="true">location_on</span>
+                        <span id="event-venue">Venue</span>
+                    </div>
+                    <div>
+                        <span class="material-symbols-rounded detail-icon" aria-hidden="true">calendar_month</span>
+                        <span id="event-date">Date</span>
+                    </div>
+                    <div>
+                        <span class="material-symbols-rounded detail-icon" aria-hidden="true">schedule</span>
+                        <span id="event-time">Time</span>
+                    </div>
+                </div>
+
+                <div class="event-description" id="event-description">
+                    Event description will be loaded here...
+                </div>
+
+                <!-- Ticket Selection -->
+                <div class="ticket-section">
+                    <h3>Select Ticket Type</h3>
+                    <div class="ticket-types">
+                        <div class="ticket-type selected" data-type="Regular" data-price="100">
+                            <div>
+                                <strong>Regular</strong>
+                                <p>Standard seating</p>
+                            </div>
+                            <div class="ticket-price">100 SAR</div>
+                        </div>
+                        <div class="ticket-type" data-type="VIP" data-price="200">
+                            <div>
+                                <strong>VIP</strong>
+                                <p>Premium seating with benefits</p>
+                            </div>
+                            <div class="ticket-price">200 SAR</div>
+                        </div>
+                        <div class="ticket-type" data-type="VVIP" data-price="300">
+                            <div>
+                                <strong>VVIP</strong>
+                                <p>Exclusive access and perks</p>
+                            </div>
+                            <div class="ticket-price">300 SAR</div>
+                        </div>
+                    </div>
+
+                    <h3>Select Quantity</h3>
+                    <div class="quantity-selector">
+                        <button class="quantity-btn" id="decrease-qty">-</button>
+                        <span class="quantity-display" id="quantity">1</span>
+                        <button class="quantity-btn" id="increase-qty">+</button>
+                    </div>
+
+                    <div class="total-price">
+                        Total: <span id="total-price">100 SAR</span>
+                    </div>
+
+                    <button class="btn-primary" id="book-btn" style="width: 100%;">Book Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+
+
+

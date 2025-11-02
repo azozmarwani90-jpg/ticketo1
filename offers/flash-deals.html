@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekend Flash Deals - Ticketo</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../events.html">Events</a></li>
+                <li class="auth-link"><a href="../signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="../signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="offer-page container" data-animate="up">
+        <header class="offer-hero" style="background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&h=900&fit=crop');">
+            <div class="offer-hero-content">
+                <h1>Weekend Flash Deals</h1>
+                <p>Save 30% on concerts, sports, and cinema tickets booked before Sunday midnight.</p>
+                <a href="../events.html" class="btn-primary">Browse Eligible Events</a>
+            </div>
+        </header>
+
+        <section class="offer-details">
+            <h2>How it works</h2>
+            <ul>
+                <li>Discount applies automatically at checkout from Friday 4 PM until Sunday 11:59 PM.</li>
+                <li>Valid on participating concerts, sports fixtures, and cinema screenings labelled <strong>FLASH30</strong>.</li>
+                <li>Maximum two orders per account during the promotion window.</li>
+            </ul>
+
+            <h2>Need to know</h2>
+            <p>
+                The promotion is available for online bookings only. Seats are limited and tickets are allocated on a first come, first served basis.
+                If an event sells out, the offer no longer applies. Cancellations are subject to the event's refund policy.
+            </p>
+
+            <div class="offer-cta">
+                <a href="../events.html?promo=FLASH30" class="btn-primary">See Events with FLASH30</a>
+                <a href="../index.html" class="btn-secondary">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Events - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section data-animate="up">
+            <h1 class="section-title">Discover Events</h1>
+        </section>
+
+        <!-- Filter Section -->
+        <section class="filter-section" data-animate="up">
+            <div class="filter-container">
+                <div class="filter-grid">
+                    <label class="filter-field" for="search-input">
+                        <span class="filter-label">Search</span>
+                        <div class="filter-input">
+                            <span class="material-symbols-rounded" aria-hidden="true">search</span>
+                            <input type="text" id="search-input" placeholder="Search events...">
+                        </div>
+                    </label>
+                    <label class="filter-field" for="category-filter">
+                        <span class="filter-label">Category</span>
+                        <div class="filter-select">
+                            <span class="material-symbols-rounded" aria-hidden="true">local_activity</span>
+                            <select id="category-filter">
+                                <option value="all">All Categories</option>
+                                <option value="Movies">Movies</option>
+                                <option value="Sports">Sports</option>
+                                <option value="Concerts">Concerts</option>
+                                <option value="Theatre">Theatre</option>
+                                <option value="Festivals">Festivals</option>
+                            </select>
+                        </div>
+                    </label>
+                    <label class="filter-field" for="city-filter">
+                        <span class="filter-label">City</span>
+                        <div class="filter-select">
+                            <span class="material-symbols-rounded" aria-hidden="true">location_city</span>
+                            <select id="city-filter">
+                                <option value="all">All Cities</option>
+                                <option value="Riyadh">Riyadh</option>
+                                <option value="Jeddah">Jeddah</option>
+                                <option value="Dammam">Dammam</option>
+                            </select>
+                        </div>
+                    </label>
+                </div>
+                <div class="filter-range">
+                    <label class="filter-range-header" for="price-range">
+                        <span class="filter-range-title">Price Range</span>
+                        <span class="filter-range-value"><span id="price-value">500</span> SAR</span>
+                    </label>
+                    <div class="range-slider">
+                        <input type="range" id="price-range" min="0" max="500" value="500" step="10">
+                        <div class="range-scale">
+                            <span>0 SAR</span>
+                            <span>500 SAR</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Events Grid -->
+        <section data-animate="up">
+            <div class="events-grid" id="events-grid">
+                <!-- Events will be loaded dynamically -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
+
+
+
