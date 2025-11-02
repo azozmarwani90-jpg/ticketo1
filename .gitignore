@@ -1,3 +1,4 @@
 js/Git-2.51.2-64-bit.exe
 *.exe
 *.msi
+node_modules/

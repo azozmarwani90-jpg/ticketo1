@@ -72,7 +72,10 @@ function readDB() {
 
 function writeDB(data) {
   ensureDB();
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+  // Atomic write: write to temp file then rename
+  const tmp = DB_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+  fs.renameSync(tmp, DB_PATH);
 }
 
 function findEvent(events, rawId) {
@@ -109,14 +112,22 @@ app.use((req, _res, next) => {
 });
 
 app.get('/health', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json({ ok: true });
+});
+
+app.get('/api/health', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json({ ok: true });
 });
 
 app.get('/api/events', (_req, res) => {
   try {
     const db = readDB();
+    res.setHeader('Content-Type', 'application/json');
     res.json(db.events || []);
   } catch (error) {
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to load events' });
   }
 });
@@ -126,10 +137,13 @@ app.get('/api/events/:id', (req, res) => {
     const db = readDB();
     const event = findEvent(db.events || [], req.params.id);
     if (!event) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(404).json({ ok: false, error: 'Event not found' });
     }
+    res.setHeader('Content-Type', 'application/json');
     res.json(event);
   } catch (error) {
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to load event' });
   }
 });
@@ -138,8 +152,10 @@ app.get('/api/promotions', (_req, res) => {
   try {
     const db = readDB();
     const promos = (db.promotions || []).filter((promo) => promo && promo.active);
+    res.setHeader('Content-Type', 'application/json');
     res.json(promos);
   } catch (error) {
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to load promotions' });
   }
 });
@@ -148,6 +164,7 @@ app.post('/api/auth/login', (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({ ok: false, error: 'Missing email or password' });
     }
 
@@ -160,12 +177,15 @@ app.post('/api/auth/login', (req, res) => {
     );
 
     if (!user) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(401).json({ ok: false, error: 'Invalid email or password' });
     }
 
     const { password: _pw, ...safeUser } = user;
+    res.setHeader('Content-Type', 'application/json');
     res.json({ ok: true, user: safeUser });
   } catch (error) {
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Login failed' });
   }
 });
@@ -173,8 +193,10 @@ app.post('/api/auth/login', (req, res) => {
 app.get('/api/bookings', (_req, res) => {
   try {
     const db = readDB();
+    res.setHeader('Content-Type', 'application/json');
     res.json(db.bookings || []);
   } catch (error) {
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to load bookings' });
   }
 });
@@ -184,6 +206,7 @@ app.post('/api/bookings', (req, res) => {
     const { name, email, eventId, tickets, promoCode } = req.body || {};
 
     if (!name || !email || !eventId) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({ ok: false, error: 'Missing required fields' });
     }
 
@@ -192,6 +215,7 @@ app.post('/api/bookings', (req, res) => {
 
     const event = findEvent(db.events || [], eventId);
     if (!event) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(404).json({ ok: false, error: 'Event not found' });
     }
 
@@ -230,9 +254,11 @@ app.post('/api/bookings', (req, res) => {
     db.bookings.push(booking);
     writeDB(db);
 
+    res.setHeader('Content-Type', 'application/json');
     res.status(201).json({ ok: true, booking, email_previewUrl: null });
   } catch (error) {
     console.error('Failed to create booking:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to create booking' });
   }
 });

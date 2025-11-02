@@ -22,6 +22,8 @@ function normalizeEvent(event) {
   if (!event) return null;
   const price = Number(event.price);
   const normalizedPrice = Number.isFinite(price) ? price : 0;
+  const lat = event.lat != null ? Number(event.lat) : null;
+  const lng = event.lng != null ? Number(event.lng) : null;
   return {
     id: event.id,
     title: event.title,
@@ -32,7 +34,10 @@ function normalizeEvent(event) {
     time: event.time || '00:00',
     price: normalizedPrice,
     description: event.description || event.desc || '',
-    image: event.image || event.img || 'images/placeholder.jpg'
+    image: event.image || event.img || 'images/placeholder.jpg',
+    promotion: event.promotion || false,
+    lat: lat,
+    lng: lng
   };
 }
 
@@ -598,6 +603,9 @@ async function initEventDetail(){
   document.getElementById('event-time').textContent  = ev.time;
   document.getElementById('event-description').textContent = ev.description;
 
+  // Initialize Leaflet map if coordinates exist
+  initEventMap(ev);
+
   const types=document.querySelectorAll('.ticket-type');
   let selected={ type:'Regular', price: basePrice }, qty=1;
   [{selector:'[data-type="Regular"]',mult:1},{selector:'[data-type="VIP"]',mult:2},{selector:'[data-type="VVIP"]',mult:3}].forEach(({selector,mult})=>{
@@ -609,6 +617,105 @@ async function initEventDetail(){
   function update(){ const total=selected.price*qty; document.getElementById('total-price').textContent = total.toLocaleString()+' SAR'; }
   update();
   const btn=document.getElementById('book-btn'); btn && btn.addEventListener('click', ()=>{ localStorage.setItem('selectedEventId', String(ev.id)); localStorage.removeItem('last_booking'); window.location.href='booking.html'; });
+}
+
+// Initialize Leaflet map for event detail page
+function initEventMap(event) {
+  const mapSection = document.getElementById('event-map-section');
+  const mapContainer = document.getElementById('event-map');
+  
+  // Check if Leaflet is loaded and event has coordinates
+  if (typeof L === 'undefined' || !mapSection || !mapContainer) return;
+  
+  const lat = event.lat != null ? Number(event.lat) : null;
+  const lng = event.lng != null ? Number(event.lng) : null;
+  
+  // If coordinates are missing or invalid, hide map section
+  if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    mapSection.style.display = 'none';
+    return;
+  }
+  
+  // Show map section
+  mapSection.style.display = 'block';
+  
+  // Initialize map
+  try {
+    const map = L.map('event-map', { 
+      scrollWheelZoom: false,
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
+      boxZoom: true,
+      keyboard: true,
+      zoomControl: true
+    }).setView([lat, lng], 13);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(map);
+    
+    // Create custom icon
+    const customIcon = L.icon({
+      iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDMyIDQwIj48cGF0aCBmaWxsPSIjRkY2QjlEIiBkPSJNMTYgMGMtOC44NCAwLTE2IDcuMTYtMTYgMTYgMCA4LjgzNyAxNiAyNCAxNiAyNHMxNi0xNS4xNjMgMTYtMjRjMC04Ljg0LTcuMTYtMTYtMTYtMTZ6bTAgMjJjLTMuMzEgMC02LTIuNjktNi02czIuNjktNiA2LTYgNiAyLjY5IDYgNi0yLjY5IDYtNiA2eiIvPjwvc3ZnPg==',
+      iconSize: [32, 40],
+      iconAnchor: [16, 40],
+      popupAnchor: [0, -40]
+    });
+    
+    // Format date and time for popup
+    const formattedDate = formatDate(event.date);
+    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    // Create popup content with styling
+    const popupContent = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-width: 200px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1f2937;">${event.title}</h3>
+        <p style="margin: 4px 0; font-size: 14px; color: #4b5563;">
+          <strong>📍 Venue:</strong> ${event.venue}
+        </p>
+        <p style="margin: 4px 0; font-size: 14px; color: #4b5563;">
+          <strong>🏙️ City:</strong> ${event.city}
+        </p>
+        <p style="margin: 4px 0; font-size: 14px; color: #4b5563;">
+          <strong>📅 Date:</strong> ${formattedDate}
+        </p>
+        <p style="margin: 4px 0; font-size: 14px; color: #4b5563;">
+          <strong>🕐 Time:</strong> ${event.time}
+        </p>
+        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" 
+           style="display: inline-block; margin-top: 12px; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,107,157,0.9), rgba(139,92,246,0.9)); color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; text-align: center; transition: transform 0.2s;">
+          🗺️ Open in Google Maps
+        </a>
+      </div>
+    `;
+    
+    // Add marker with popup
+    const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+    marker.bindPopup(popupContent, { 
+      maxWidth: 300,
+      className: 'custom-popup'
+    });
+    
+    // Open popup by default
+    marker.openPopup();
+    
+    // Add click handler to re-center map
+    marker.on('click', function() {
+      map.setView([lat, lng], 13);
+    });
+    
+    // Invalidate size after a short delay to ensure proper rendering
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    
+  } catch (error) {
+    console.error('Failed to initialize map:', error);
+    mapSection.style.display = 'none';
+  }
 }
 
 // Booking
