@@ -104,7 +104,23 @@ app.use(
   })
 );
 
-app.use(express.json());
+// Safe JSON parsing middleware
+app.use(express.json({
+  verify: (req, _res, buf, encoding) => {
+    if (buf && buf.length) {
+      req.rawBody = buf.toString(encoding || 'utf8');
+    }
+  }
+}));
+
+// Middleware to handle JSON parsing errors
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(400).json({ ok: false, error: 'Invalid JSON in request body' });
+  }
+  next(err);
+});
 
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
@@ -145,6 +161,108 @@ app.get('/api/events/:id', (req, res) => {
   } catch (error) {
     res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to load event' });
+  }
+});
+
+// POST /api/events - Create new event
+app.post('/api/events', (req, res) => {
+  try {
+    const { title, category, city, venue, date, time, price, image, description } = req.body || {};
+    
+    if (!title || !category || !venue || !date) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Missing required fields' });
+    }
+
+    const db = readDB();
+    const maxId = (db.events || []).reduce((max, e) => {
+      const numId = Number(e.id);
+      return !isNaN(numId) && numId > max ? numId : max;
+    }, 0);
+    
+    const newEvent = {
+      id: maxId + 1,
+      title,
+      category,
+      city: city || '',
+      venue,
+      date,
+      time: time || '00:00',
+      price: Number(price) || 0,
+      image: image || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop',
+      description: description || '',
+      promotion: false,
+      createdAt: new Date().toISOString()
+    };
+
+    db.events = Array.isArray(db.events) ? db.events : [];
+    db.events.push(newEvent);
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(201).json({ ok: true, event: newEvent });
+  } catch (error) {
+    console.error('Failed to create event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to create event' });
+  }
+});
+
+// PUT /api/events/:id - Update event
+app.put('/api/events/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const event = findEvent(db.events || [], req.params.id);
+    
+    if (!event) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Event not found' });
+    }
+
+    const updates = req.body || {};
+    const updatedEvent = {
+      ...event,
+      ...updates,
+      id: event.id, // Preserve original ID
+      updatedAt: new Date().toISOString()
+    };
+
+    const idx = db.events.findIndex((e) => String(e.id) === String(event.id));
+    if (idx !== -1) {
+      db.events[idx] = updatedEvent;
+      writeDB(db);
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, event: updatedEvent });
+  } catch (error) {
+    console.error('Failed to update event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update event' });
+  }
+});
+
+// DELETE /api/events/:id - Delete event
+app.delete('/api/events/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const initialLength = (db.events || []).length;
+    
+    db.events = (db.events || []).filter((e) => String(e.id) !== String(req.params.id));
+    
+    if (db.events.length === initialLength) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Event not found' });
+    }
+
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete event' });
   }
 });
 

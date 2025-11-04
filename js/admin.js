@@ -154,14 +154,30 @@ function deleteBooking(bookingId) {
 }
 
 // Load Events Grid
-function loadEventsGrid() {
-  const events = DB.getAllEvents();
+async function loadEventsGrid() {
   const grid = document.getElementById('admin-events-grid');
 
   if (!grid) {
     return;
   }
 
+  grid.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-light);">Loading events...</p>';
+
+  try {
+    // Fetch events from API
+    const response = await fetch(`${API_BASE}/api/events`);
+    if (response.ok) {
+      const events = await response.json();
+      // Sync with local DB
+      if (Array.isArray(events) && events.length > 0) {
+        DB.setEvents(events);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to fetch events from API, using local DB:', error);
+  }
+
+  const events = DB.getAllEvents();
   grid.innerHTML = '';
 
   if (!events || events.length === 0) {
@@ -205,17 +221,134 @@ function deleteEvent(eventId) {
   window.modalInstance.confirm(
     'Delete Event',
     'Are you sure you want to delete this event? This action cannot be undone.',
-    () => {
-      if (DB.deleteEvent(eventId)) {
-        window.modalInstance.success('Event Deleted', 'The event has been deleted successfully!', () => {
-          loadEventsGrid();
-          loadStatistics();
+    async () => {
+      try {
+        // Try backend API first
+        const response = await fetch(`${API_BASE}/api/events/${encodeURIComponent(eventId)}`, {
+          method: 'DELETE'
         });
-      } else {
-        window.modalInstance.error('Delete Failed', 'Unable to locate the selected event.');
+        
+        const result = await response.json();
+        
+        if (response.ok && result.ok) {
+          // Update local DB
+          DB.deleteEvent(eventId);
+          window.modalInstance.success('Event Deleted', 'The event has been deleted successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          throw new Error(result.error || 'Server error');
+        }
+      } catch (error) {
+        console.warn('API failed, falling back to local DB:', error);
+        // Fallback to local DB
+        if (DB.deleteEvent(eventId)) {
+          window.modalInstance.success('Event Deleted (Local)', 'Event removed locally. Changes will sync when server is available.', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Delete Failed', 'Unable to locate the selected event.');
+        }
       }
     }
   );
+}
+
+// View Event
+function viewEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (event) {
+    const details = `
+      <div style="text-align: left;">
+        <p><strong>Event ID:</strong> ${event.id}</p>
+        <p><strong>Title:</strong> ${event.title}</p>
+        <p><strong>Category:</strong> ${event.category}</p>
+        <p><strong>City:</strong> ${event.city}</p>
+        <p><strong>Venue:</strong> ${event.venue}</p>
+        <p><strong>Date:</strong> ${formatDate(event.date)} at ${event.time}</p>
+        <p><strong>Price:</strong> ${event.price} SAR</p>
+        <p><strong>Description:</strong> ${event.description}</p>
+        <img src="${event.image}" alt="${event.title}" style="width: 100%; max-width: 400px; border-radius: 8px; margin-top: 1rem;">
+      </div>
+    `;
+    window.modalInstance.alert('Event Details', details);
+  }
+}
+
+// Edit Event
+function editEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (!event) {
+    window.modalInstance.error('Event Not Found', 'Could not find the event to edit.');
+    return;
+  }
+  
+  window.modalInstance.showForm({
+    title: 'Edit Event',
+    fields: [
+      { name: 'title', label: 'Event Title', type: 'text', value: event.title, required: true, icon: 'T' },
+      { name: 'category', label: 'Category', type: 'select', options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals'], value: event.category, required: true, icon: 'C' },
+      { name: 'city', label: 'City', type: 'select', options: ['Riyadh', 'Jeddah', 'Dammam'], value: event.city, required: true, icon: 'City' },
+      { name: 'venue', label: 'Venue', type: 'text', value: event.venue, required: true, icon: 'V' },
+      { name: 'date', label: 'Date', type: 'date', value: event.date, required: true, icon: 'D' },
+      { name: 'time', label: 'Time', type: 'time', value: event.time, required: true, icon: 'T' },
+      { name: 'price', label: 'Price (SAR)', type: 'number', value: event.price, required: true, icon: 'P' },
+      { name: 'image', label: 'Image URL', type: 'url', value: event.image, icon: 'Img' },
+      { name: 'description', label: 'Description', type: 'textarea', value: event.description, icon: 'Info' }
+    ],
+    submitText: 'Update Event',
+    onSubmit: async (data) => {
+      const updatedEvent = {
+        ...event,
+        title: data.title,
+        category: data.category,
+        city: data.city,
+        venue: data.venue,
+        date: data.date,
+        time: data.time,
+        price: parseFloat(data.price),
+        image: data.image,
+        description: data.description
+      };
+
+      try {
+        // Try backend API first
+        const response = await fetch(`${API_BASE}/api/events/${encodeURIComponent(eventId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedEvent)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.ok) {
+          // Update local DB
+          if (result.event) DB.upsertEvent(result.event);
+          else DB.updateEvent(eventId, updatedEvent);
+          
+          window.modalInstance.success('Event Updated', 'The event has been updated successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          throw new Error(result.error || 'Server error');
+        }
+      } catch (error) {
+        console.warn('API failed, falling back to local DB:', error);
+        // Fallback to local DB
+        if (DB.updateEvent(eventId, updatedEvent)) {
+          window.modalInstance.success('Event Updated (Local)', 'Event updated locally. Changes will sync when server is available.', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Update Failed', 'Unable to update the event.');
+        }
+      }
+    }
+  });
 }
 
 // Add New Event
@@ -234,7 +367,7 @@ function addNewEvent() {
       { name: 'description', label: 'Description', type: 'textarea', icon: 'Info', placeholder: 'Enter event description' }
     ],
     submitText: 'Add Event',
-    onSubmit: (data) => {
+    onSubmit: async (data) => {
       const newEvent = {
         title: data.title,
         category: data.category,
@@ -247,15 +380,38 @@ function addNewEvent() {
         description: data.description
       };
 
-      const createdEvent = DB.addEvent(newEvent);
-
-      if (createdEvent) {
-        window.modalInstance.success('Event Added', 'The new event has been added successfully!', () => {
-          loadEventsGrid();
-          loadStatistics();
+      try {
+        // Try backend API first
+        const response = await fetch(`${API_BASE}/api/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newEvent)
         });
-      } else {
-        window.modalInstance.error('Add Failed', 'Unable to save the new event.');
+        
+        const result = await response.json();
+        
+        if (response.ok && result.ok) {
+          // Update local DB with server response
+          if (result.event) DB.upsertEvent(result.event);
+          window.modalInstance.success('Event Added', 'The new event has been added successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          throw new Error(result.error || 'Server error');
+        }
+      } catch (error) {
+        console.warn('API failed, falling back to local DB:', error);
+        // Fallback to local DB
+        const createdEvent = DB.addEvent(newEvent);
+        if (createdEvent) {
+          window.modalInstance.success('Event Added (Local)', 'Event saved locally. Sync with server when available.', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Add Failed', 'Unable to save the new event.');
+        }
       }
     }
   });
@@ -286,7 +442,7 @@ function loadUsersTable() {
   if (allUsers.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="7" class="empty-state">
           <div class="empty-icon">--</div>
           <h3>No users yet</h3>
           <p>Users will appear here once they make bookings.</p>
@@ -301,11 +457,15 @@ function loadUsersTable() {
   allUsers.forEach(user => {
     const userBookings = bookings.filter(b => b.userEmail === user.email);
     const row = document.createElement('tr');
+    const roleClass = user.role === 'admin' ? 'status-confirmed' : 'status-pending';
+    const roleLabel = user.role === 'admin' ? 'Admin' : 'User';
+    const disabledBadge = user.disabled ? '<span style="color: #EF4444; font-weight: 600; margin-left: 0.5rem;">(Disabled)</span>' : '';
     
     row.innerHTML = `
       <td><strong>${user.id}</strong></td>
-      <td>${user.name}</td>
+      <td>${user.name}${disabledBadge}</td>
       <td>${user.email}</td>
+      <td><span class="status-badge ${roleClass}">${roleLabel}</span></td>
       <td>${user.phone || 'N/A'}</td>
       <td>${new Date(user.createdAt).toLocaleDateString()}</td>
       <td><strong>${userBookings.length}</strong></td>
