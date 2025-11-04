@@ -247,20 +247,23 @@ class TicketoDatabase {
   saveDatabase(db){ localStorage.setItem('ticketo_db', JSON.stringify(db)); }
   addUser(userData){
     const db = this.getDatabase(); const now = new Date().toISOString();
-    const i = db.users.findIndex(u=>u.email===userData.email);
+    // Find existing user by email AND role (to support same email with different roles)
+    const i = db.users.findIndex(u=>u.email===userData.email && u.role===(userData.role||'user'));
     const base = {
-      id: userData.id || (i!==-1? db.users[i].id : 'USER'+Date.now()),
+      id: userData.id || (i!==-1? db.users[i].id : 'USER'+Date.now()+'-'+Math.random().toString(36).substr(2,5)),
       name: userData.name || userData.email.split('@')[0] || 'Guest',
       email: userData.email,
       phone: userData.phone || (i!==-1? db.users[i].phone : ''),
       createdAt: userData.createdAt || (i!==-1? db.users[i].createdAt : now),
       role: userData.role || (i!==-1? db.users[i].role : 'user'),
-      password: userData.password || (i!==-1? db.users[i].password || '' : '')
+      password: userData.password || (i!==-1? db.users[i].password || '' : ''),
+      disabled: userData.disabled || false
     };
     if (i!==-1){ db.users[i] = {...db.users[i], ...base}; this.saveDatabase(db); return db.users[i]; }
     db.users.push(base); db.stats.totalUsers = db.users.length; this.saveDatabase(db); return base;
   }
   getUserByEmail(email){ return this.getDatabase().users.find(u=>u.email===email); }
+  getUserByEmailAndRole(email, role){ return this.getDatabase().users.find(u=>u.email===email && u.role===role); }
   getAllUsers(){ return this.getDatabase().users; }
   setBookings(bookings){
     if (!Array.isArray(bookings)) return;
@@ -401,22 +404,27 @@ const DB = new TicketoDatabase();
 // --- Auth -------------------------------------------------------------------
 class AuthSystem {
   constructor(){ this.currentUser = this.getCurrentUser(); }
-  signup(name,email,password){
+  signup(name,email,password,role='user'){
     const em = email.trim().toLowerCase();
-    if (DB.getUserByEmail(em)) return {success:false,message:'Email already registered'};
-    const user = DB.addUser({ name, email:em, password:this.hash(password), role:'user' });
+    // Allow same email for different roles (admin vs user)
+    const existingWithRole = DB.getAllUsers().find(u => u.email === em && u.role === role);
+    if (existingWithRole) return {success:false,message:'Email already registered for this role'};
+    const user = DB.addUser({ name, email:em, password:this.hash(password), role });
     this.setCurrentUser(user); return {success:true,message:'Account created successfully', user};
   }
-  signin(email,password){
-    const em=email.trim().toLowerCase(); const u=DB.getUserByEmail(em);
-    if (!u) return {success:false,message:'Email not found'};
+  signin(email,password,role='user'){
+    const em=email.trim().toLowerCase();
+    // Find user by email AND role
+    const u=DB.getAllUsers().find(u => u.email === em && u.role === role);
+    if (!u) return {success:false,message:'Invalid credentials for this role'};
     if (u.password !== this.hash(password)) return {success:false,message:'Incorrect password'};
     this.setCurrentUser(u); return {success:true,message:'Login successful', user:u};
   }
   ensureAdminAccess(email,password,name=''){
     if (!email) return {success:false,message:'Please provide an email address.'};
     const em=email.trim().toLowerCase(); const derived=name||em.split('@')[0].replace(/[._-]/g,' ')||'Admin User';
-    const hashed=this.hash(password||'admin'); const existing=DB.getUserByEmail(em);
+    const hashed=this.hash(password||'admin');
+    const existing=DB.getAllUsers().find(u => u.email === em && u.role === 'admin');
     const admin=DB.addUser({ id:existing?.id, name: existing?.name || derived, email:em, role:'admin', password:hashed, createdAt:existing?.createdAt });
     this.setCurrentUser(admin);
     return {success:true, message: existing? 'Admin credentials updated for quick access.' : 'Admin account provisioned successfully.', user:admin};
@@ -427,6 +435,7 @@ class AuthSystem {
   isLoggedIn(){ return this.currentUser !== null; }
   isAdmin(){ return this.currentUser && this.currentUser.role === 'admin'; }
   hash(pw){ let h=0; for (let i=0;i<pw.length;i++){ const c=pw.charCodeAt(i); h=((h<<5)-h)+c; h=h&h; } return h.toString(); }
+  hashPassword(pw){ return this.hash(pw); }
   updateProfile(up){ if (!this.currentUser) return false; const db=DB.getDatabase(); const i=db.users.findIndex(u=>u.id===this.currentUser.id); if (i!==-1){ db.users[i]={...db.users[i], ...up}; DB.saveDatabase(db); this.setCurrentUser(db.users[i]); return true;} return false; }
 }
 const Auth = new AuthSystem();
@@ -438,15 +447,27 @@ function updateNavigation(){
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
-    const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
     const initials=(Auth.currentUser.name||'U').split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).join('').slice(0,2)||'U';
+    
+    // Role-specific menu items
+    let menuItems = '';
+    if (Auth.isAdmin()) {
+      // Admin sees: Home (customer site), Dashboard (admin), Sign out
+      menuItems = `
+        <a href="../index.html" class="nav-user-link">Home (Customer Site)</a>
+        <a href="index.html" class="nav-user-link">Dashboard (Admin)</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    } else {
+      // User sees: Home, My Profile, Sign out
+      menuItems = `
+        <a href="index.html" class="nav-user-link">Home</a>
+        <a href="profile.html" class="nav-user-link">My Profile</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    }
+    
     li.innerHTML = `<div class="nav-user-menu">
       <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
-      <div id="user-dropdown" class="nav-user-dropdown">
-        <a href="${homeLink}" class="nav-user-link">Home</a>
-        <a href="${dashLink}" class="nav-user-link">${dashLabel}</a>
-        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
-      </div></div>`;
+      <div id="user-dropdown" class="nav-user-dropdown">${menuItems}</div></div>`;
     navLinks.insertBefore(li, navLinks.lastElementChild);
     setTimeout(()=>{
       const wrap = document.querySelector('.nav-user-menu');
