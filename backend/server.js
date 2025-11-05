@@ -25,7 +25,9 @@ const DEFAULT_DB = {
       time: '20:00',
       price: 350,
       image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop',
-      description: 'Legendary evening at Riyadh Boulevard.'
+      description: 'Legendary evening at Riyadh Boulevard.',
+      lat: 24.7136,
+      lng: 46.6753
     },
     {
       id: 2,
@@ -37,7 +39,9 @@ const DEFAULT_DB = {
       time: '19:30',
       price: 45,
       image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&h=600&fit=crop',
-      description: 'Timeless masterpiece on big screen.'
+      description: 'Timeless masterpiece on big screen.',
+      lat: 21.4858,
+      lng: 39.1925
     }
   ],
   promotions: [
@@ -263,12 +267,183 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
+// PUT /api/bookings/:id - Update booking status (for cancel)
+app.put('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+    
+    if (!status) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Status is required' });
+    }
+    
+    const db = readDB();
+    const bookings = db.bookings || [];
+    const index = bookings.findIndex((b) => String(b.id) === String(id));
+    
+    if (index === -1) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+    
+    bookings[index] = { ...bookings[index], status };
+    db.bookings = bookings;
+    writeDB(db);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, booking: bookings[index] });
+  } catch (error) {
+    console.error('Failed to update booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update booking' });
+  }
+});
+
+// DELETE /api/bookings/:id - Delete booking
+app.delete('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const bookings = db.bookings || [];
+    const index = bookings.findIndex((b) => String(b.id) === String(id));
+    
+    if (index === -1) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+    
+    bookings.splice(index, 1);
+    db.bookings = bookings;
+    writeDB(db);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Booking deleted' });
+  } catch (error) {
+    console.error('Failed to delete booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete booking' });
+  }
+});
+
+// POST /api/events - Create new event
+app.post('/api/events', (req, res) => {
+  try {
+    const eventData = req.body || {};
+    
+    if (!eventData.title || !eventData.category) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Title and category are required' });
+    }
+    
+    const db = readDB();
+    const events = db.events || [];
+    
+    // Generate new ID
+    const maxId = events.reduce((max, e) => Math.max(max, Number(e.id) || 0), 0);
+    const newId = maxId + 1;
+    
+    const newEvent = {
+      id: newId,
+      title: eventData.title,
+      category: eventData.category,
+      city: eventData.city || '',
+      venue: eventData.venue || '',
+      date: eventData.date || new Date().toISOString().slice(0, 10),
+      time: eventData.time || '00:00',
+      price: Number(eventData.price) || 0,
+      image: eventData.image || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop',
+      description: eventData.description || '',
+      lat: eventData.lat != null ? Number(eventData.lat) : null,
+      lng: eventData.lng != null ? Number(eventData.lng) : null,
+      createdAt: new Date().toISOString()
+    };
+    
+    events.push(newEvent);
+    db.events = events;
+    writeDB(db);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(201).json({ ok: true, event: newEvent });
+  } catch (error) {
+    console.error('Failed to create event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to create event' });
+  }
+});
+
+// PUT /api/events/:id - Update event
+app.put('/api/events/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body || {};
+    
+    const db = readDB();
+    const events = db.events || [];
+    const event = findEvent(events, id);
+    
+    if (!event) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Event not found' });
+    }
+    
+    const index = events.indexOf(event);
+    const updatedEvent = {
+      ...event,
+      ...updates,
+      id: event.id, // Preserve ID
+      lat: updates.lat != null ? Number(updates.lat) : event.lat,
+      lng: updates.lng != null ? Number(updates.lng) : event.lng,
+      price: updates.price != null ? Number(updates.price) : event.price
+    };
+    
+    events[index] = updatedEvent;
+    db.events = events;
+    writeDB(db);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, event: updatedEvent });
+  } catch (error) {
+    console.error('Failed to update event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update event' });
+  }
+});
+
+// DELETE /api/events/:id - Delete event
+app.delete('/api/events/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const events = db.events || [];
+    const event = findEvent(events, id);
+    
+    if (!event) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Event not found' });
+    }
+    
+    const index = events.indexOf(event);
+    events.splice(index, 1);
+    db.events = events;
+    writeDB(db);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Event deleted' });
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete event' });
+  }
+});
+
 // Optional static hosting (uncomment when needed)
 // const FRONTEND_DIR = path.resolve(__dirname, '..');
 // app.use(express.static(FRONTEND_DIR));
 
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
+  res.setHeader('Content-Type', 'application/json');
   res.status(err.status || 500).json({ ok: false, error: err.message || 'Server error' });
 });
 

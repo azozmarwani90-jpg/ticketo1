@@ -180,10 +180,10 @@ class Modal {
   showForm({title, fields=[], submitText='Save', cancelText='Cancel', onSubmit=()=>{}, onCancel=()=>{}}){
     const overlay = document.getElementById('modal-overlay');
     const fieldsHTML = fields.map((f)=>{
-      const {name,label,type='text',value='',required=false,options=[],placeholder='',icon='>'} = f;
+      const {name,label,type='text',value='',required=false,options=[],placeholder=''} = f;
       if (type === 'select'){
         return `<div class="modal-form-group">
-          <label for="${name}"><span class="modal-form-icon">${icon}</span>${label}${required?' *':''}</label>
+          <label for="${name}">${label}${required?' *':''}</label>
           <select id="${name}" name="${name}" ${required?'required':''}>
             ${options.map((opt)=>`<option value="${opt}" ${opt===value?'selected':''}>${opt}</option>`).join('')}
           </select>
@@ -191,12 +191,12 @@ class Modal {
       }
       if (type === 'textarea'){
         return `<div class="modal-form-group">
-          <label for="${name}"><span class="modal-form-icon">${icon}</span>${label}${required?' *':''}</label>
+          <label for="${name}">${label}${required?' *':''}</label>
           <textarea id="${name}" name="${name}" ${required?'required':''} placeholder="${placeholder}">${value}</textarea>
         </div>`;
       }
       return `<div class="modal-form-group">
-        <label for="${name}"><span class="modal-form-icon">${icon}</span>${label}${required?' *':''}</label>
+        <label for="${name}">${label}${required?' *':''}</label>
         <input type="${type}" id="${name}" name="${name}" value="${value}" ${required?'required':''} placeholder="${placeholder}">
       </div>`;
     }).join('');
@@ -502,17 +502,15 @@ function initHeroSlider(){
 // --- Events list / cards ----------------------------------------------------
 // --- Events list / cards ----------------------------------------------------
 const INITIAL_EVENTS = [
-  { id: 1, title: 'Abdul Majeed Abdullah Concert', category: 'Concerts', city: 'Riyadh', venue: 'Riyadh Boulevard', date: '2025-11-15', time: '20:00', price: 350, image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop', description: 'Experience an unforgettable evening with Abdul Majeed Abdullah.' },
-  { id: 2, title: 'The Godfather - Classic Cinema', category: 'Movies', city: 'Jeddah', venue: 'VOX Cinemas Red Sea Mall', date: '2025-10-20', time: '19:30', price: 45, image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&h=600&fit=crop', description: 'Watch the timeless masterpiece The Godfather.' },
-  { id: 3, title: 'Al Nassr vs Al Ittihad', category: 'Sports', city: 'Riyadh', venue: 'King Fahd International Stadium', date: '2025-10-25', time: '18:00', price: 150, image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop', description: 'Witness the epic clash between Al Nassr and Al Ittihad.' },
-  { id: 4, title: 'Riyadh Season Festival', category: 'Festivals', city: 'Riyadh', venue: 'Boulevard Riyadh City', date: '2025-12-01', time: '17:00', price: 80, image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=600&fit=crop', description: 'Join the biggest entertainment festival in the region!' },
-  { id: 5, title: "Shakespeare's Hamlet", category: 'Theatre', city: 'Jeddah', venue: 'King Abdullah Cultural Center', date: '2025-11-10', time: '20:30', price: 120, image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=600&fit=crop', description: "Experience Shakespeare's greatest tragedy brought to life." },
-  { id: 6, title: 'Saudi National Day Celebration', category: 'Festivals', city: 'Dammam', venue: 'King Fahd Park', date: '2025-09-23', time: '16:00', price: 0, image: 'https://images.unsplash.com/photo-1527838832700-5059252407fa?w=800&h=600&fit=crop', description: 'Celebrate Saudi National Day with spectacular fireworks.' },
-  { id: 7, title: 'Formula E Diriyah E-Prix', category: 'Sports', city: 'Riyadh', venue: 'Diriyah Street Circuit', date: '2025-12-15', time: '15:00', price: 450, image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&h=600&fit=crop', description: 'Experience the thrill of electric racing at the Diriyah E-Prix.' },
-  { id: 8, title: 'Dune: Part Two', category: 'Movies', city: 'Riyadh', venue: 'Muvi Cinemas The Esplanade', date: '2025-10-18', time: '21:00', price: 55, image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&h=600&fit=crop', description: "The epic saga continues in Dune: Part Two." }
+  { id: 1, title: 'Abdul Majeed Abdullah Concert', category: 'Concerts', city: 'Riyadh', venue: 'Riyadh Boulevard', date: '2025-11-15', time: '20:00', price: 350, image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop', description: 'Experience an unforgettable evening with Abdul Majeed Abdullah.', lat: 24.7136, lng: 46.6753 },
+  { id: 2, title: 'The Godfather - Classic Cinema', category: 'Movies', city: 'Jeddah', venue: 'VOX Cinemas Red Sea Mall', date: '2025-10-20', time: '19:30', price: 45, image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&h=600&fit=crop', description: 'Watch the timeless masterpiece The Godfather.', lat: 21.4858, lng: 39.1925 },
+  { id: 3, title: 'Al Nassr vs Al Ittihad', category: 'Sports', city: 'Riyadh', venue: 'King Fahd International Stadium', date: '2025-10-25', time: '18:00', price: 150, image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop', description: 'Witness the epic clash between Al Nassr and Al Ittihad.', lat: 24.6877, lng: 46.7219 },
+  { id: 4, title: 'Riyadh Season Festival', category: 'Festivals', city: 'Riyadh', venue: 'Boulevard Riyadh City', date: '2025-12-01', time: '17:00', price: 80, image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=600&fit=crop', description: 'Join the biggest entertainment festival in the region!', lat: 24.7136, lng: 46.6753 },
+  { id: 5, title: "Shakespeare's Hamlet", category: 'Theatre', city: 'Jeddah', venue: 'King Abdullah Cultural Center', date: '2025-11-10', time: '20:30', price: 120, image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=600&fit=crop', description: "Experience Shakespeare's greatest tragedy brought to life.", lat: 21.5433, lng: 39.1728 },
+  { id: 6, title: 'Saudi National Day Celebration', category: 'Festivals', city: 'Dammam', venue: 'King Fahd Park', date: '2025-09-23', time: '16:00', price: 0, image: 'https://images.unsplash.com/photo-1527838832700-5059252407fa?w=800&h=600&fit=crop', description: 'Celebrate Saudi National Day with spectacular fireworks.', lat: 26.4207, lng: 50.0888 },
+  { id: 7, title: 'Formula E Diriyah E-Prix', category: 'Sports', city: 'Riyadh', venue: 'Diriyah Street Circuit', date: '2025-12-15', time: '15:00', price: 450, image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&h=600&fit=crop', description: 'Experience the thrill of electric racing at the Diriyah E-Prix.', lat: 24.7333, lng: 46.5731 },
+  { id: 8, title: 'Dune: Part Two', category: 'Movies', city: 'Riyadh', venue: 'Muvi Cinemas The Esplanade', date: '2025-10-18', time: '21:00', price: 55, image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&h=600&fit=crop', description: "The epic saga continues in Dune: Part Two.", lat: 24.7136, lng: 46.6753 }
 ];
-DB.seedEvents(INITIAL_EVENTS);
-
 DB.seedEvents(INITIAL_EVENTS);
 
 const CATEGORY_ICON_MAP = { Movies:'movie', Sports:'stadium', Concerts:'music_note', Theatre:'theater_comedy', Festivals:'celebration' };
@@ -918,11 +916,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',placeholder:'+966 XXX XXX XXX'},
+      {name:'age',label:'Age',type:'number',value:u.age||'',placeholder:'Enter your age'},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say']}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{
