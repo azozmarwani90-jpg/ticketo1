@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotions & Offers - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section data-animate="up" style="margin-top: 2rem;">
+            <h1 class="section-title">Current Promotions & Special Offers</h1>
+            <p style="text-align: center; color: var(--text-light); margin-bottom: 2rem;">
+                Explore our latest deals and exclusive offers on events across Saudi Arabia
+            </p>
+
+            <div class="promotions-grid">
+                <!-- Weekend Flash Deals -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(255,107,157,0.9), rgba(139,92,246,0.9));">
+                        <h2>Weekend Flash Deals</h2>
+                        <div class="promotion-badge">30% OFF</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Save 30% on concerts, sports, and cinema tickets booked before Sunday midnight. 
+                            Don't miss out on amazing entertainment at unbeatable prices!
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ Valid for all concert tickets</li>
+                            <li>✓ Includes premium sports events</li>
+                            <li>✓ All cinema screenings eligible</li>
+                            <li>✓ Limited time offer - ends Sunday</li>
+                        </ul>
+                        <a href="events.html" class="btn-primary">Browse Events</a>
+                    </div>
+                </div>
+
+                <!-- Bundle & Save -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));">
+                        <h2>Bundle & Save</h2>
+                        <div class="promotion-badge">20% OFF</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Book two or more experiences in the same week and unlock an extra 20% discount. 
+                            Perfect for planning your entertainment week!
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ Combine any events within 7 days</li>
+                            <li>✓ Stack with other promotions</li>
+                            <li>✓ All categories included</li>
+                            <li>✓ Automatic discount at checkout</li>
+                        </ul>
+                        <a href="events.html" class="btn-primary">Start Bundling</a>
+                    </div>
+                </div>
+
+                <!-- Student Rewards -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(59,130,246,0.9), rgba(37,99,235,0.9));">
+                        <h2>Student Rewards</h2>
+                        <div class="promotion-badge">SAR 50</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Verify your student email and receive a SAR 50 promo code for select festivals. 
+                            Education meets entertainment!
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ Valid .edu email required</li>
+                            <li>✓ One-time verification process</li>
+                            <li>✓ Applicable to festival tickets</li>
+                            <li>✓ Additional student discounts available</li>
+                        </ul>
+                        <a href="events.html?category=Festivals" class="btn-primary">View Festivals</a>
+                    </div>
+                </div>
+
+                <!-- Saudi National Day -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(5,150,105,0.9), rgba(4,120,87,0.9));">
+                        <h2>Saudi National Day Special</h2>
+                        <div class="promotion-badge">FREE</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Celebrate our great nation! Free entry to select National Day celebration events. 
+                            Join the festivities with your family and friends.
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ Free admission to National Day events</li>
+                            <li>✓ Family-friendly activities</li>
+                            <li>✓ Spectacular fireworks shows</li>
+                            <li>✓ Cultural performances included</li>
+                        </ul>
+                        <a href="events.html?search=National+Day" class="btn-primary">See Events</a>
+                    </div>
+                </div>
+
+                <!-- Early Bird Specials -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(245,158,11,0.9), rgba(217,119,6,0.9));">
+                        <h2>Early Bird Specials</h2>
+                        <div class="promotion-badge">15% OFF</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Book your tickets 2 weeks or more in advance and enjoy 15% off. 
+                            Plan ahead and save more on your favorite events!
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ 2+ weeks advance booking required</li>
+                            <li>✓ All event categories eligible</li>
+                            <li>✓ Best seats available</li>
+                            <li>✓ Flexible cancellation policy</li>
+                        </ul>
+                        <a href="events.html" class="btn-primary">Book Early</a>
+                    </div>
+                </div>
+
+                <!-- VIP Membership -->
+                <div class="promotion-card" data-animate="up">
+                    <div class="promotion-header" style="background: linear-gradient(135deg, rgba(139,92,246,0.9), rgba(124,58,237,0.9));">
+                        <h2>VIP Membership</h2>
+                        <div class="promotion-badge">EXCLUSIVE</div>
+                    </div>
+                    <div class="promotion-body">
+                        <p class="promotion-description">
+                            Join our VIP program for exclusive access to premium events, priority booking, 
+                            and year-round discounts on all ticket purchases.
+                        </p>
+                        <ul class="promotion-features">
+                            <li>✓ Priority booking access</li>
+                            <li>✓ 10% discount on all tickets</li>
+                            <li>✓ Exclusive VIP-only events</li>
+                            <li>✓ Complimentary upgrades</li>
+                        </ul>
+                        <a href="events.html" class="btn-primary">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

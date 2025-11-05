@@ -438,15 +438,28 @@ function updateNavigation(){
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
-    const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
     const initials=(Auth.currentUser.name||'U').split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).join('').slice(0,2)||'U';
+    const isAdmin = Auth.isAdmin();
+    
+    // For regular users: Profile + View my bookings + Sign Out
+    // For admin (on user site): should not show admin dashboard link
+    let dropdownHTML = '';
+    if (isAdmin && window.location.pathname.includes('admin/')) {
+      // Admin on admin site - show only Profile and Sign Out (no Home link)
+      dropdownHTML = `
+        <a href="index.html" class="nav-user-link">Profile</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    } else {
+      // Regular user on user site - show Profile, View my bookings, Sign Out (no Admin/Home)
+      dropdownHTML = `
+        <a href="profile.html" class="nav-user-link">Profile</a>
+        <a href="profile.html" class="nav-user-link">View my bookings</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    }
+    
     li.innerHTML = `<div class="nav-user-menu">
       <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
-      <div id="user-dropdown" class="nav-user-dropdown">
-        <a href="${homeLink}" class="nav-user-link">Home</a>
-        <a href="${dashLink}" class="nav-user-link">${dashLabel}</a>
-        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
-      </div></div>`;
+      <div id="user-dropdown" class="nav-user-dropdown">${dropdownHTML}</div></div>`;
     navLinks.insertBefore(li, navLinks.lastElementChild);
     setTimeout(()=>{
       const wrap = document.querySelector('.nav-user-menu');
@@ -853,14 +866,39 @@ function loadUserBookings(status='all'){
     container.appendChild(wrap);
   });
 }
-function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+async function cancelBooking(id){
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      const response = await fetch(`${API_BASE}/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      const data = await safeJson(response);
+      
+      if (response.ok && data && data.ok) {
+        // Update local DB
+        DB.updateBookingStatus(id, 'cancelled');
+        cachedBookings = null; // Invalidate cache
+        
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', async ()=>{
+          await fetchBookingsFromApi(); // Refresh from server
+          loadUserStats();
+          loadUserBookings();
+        });
+      } else {
+        throw new Error(data?.error || 'Cancellation failed');
+      }
+    } catch (error) {
+      console.error('Failed to cancel booking:', error);
+      // Fallback to local-only update
+      if (DB.updateBookingStatus(id, 'cancelled')){
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled (offline mode).', ()=>{
+          cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+        });
+      } else {
+        window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      }
     }
   });
 }
@@ -919,11 +957,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'👤'},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'📧'},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'📱'},
+      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'📅'},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'⚧'}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{
