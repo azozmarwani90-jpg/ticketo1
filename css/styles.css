@@ -982,9 +982,15 @@ nav {
 /* Event Detail Page */
 .event-detail {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 2.5rem;
   margin-top: 2rem;
+}
+
+.event-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .event-image-large {
@@ -1038,13 +1044,9 @@ nav {
 
 /* Ticket Selection */
 .ticket-section {
-  background: var(--surface-color);
-  padding: 2rem;
-  border-radius: var(--radius-lg);
+  padding: 2rem 0;
   margin-top: 2rem;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 20px 45px var(--shadow);
-  backdrop-filter: blur(var(--blur-strength));
+  border-top: 1px solid var(--border-color);
 }
 
 .ticket-section h3 {
