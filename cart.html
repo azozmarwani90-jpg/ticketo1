@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <a href="cart.html" class="cart-icon-link">
+                        <span class="material-symbols-rounded" aria-hidden="true">shopping_cart</span>
+                        <span id="cart-badge" class="cart-badge">0</span>
+                    </a>
+                </li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="min-height: 60vh;">
+        <div class="cart-container" data-animate="up">
+            <h1 class="section-title">Shopping Cart</h1>
+            
+            <div id="cart-items" class="cart-items">
+                <!-- Cart items will be loaded here -->
+            </div>
+            
+            <div id="cart-empty" class="cart-empty" style="display: none;">
+                <div class="empty-icon material-symbols-rounded" aria-hidden="true">shopping_cart</div>
+                <h2>Your cart is empty</h2>
+                <p>Add some exciting events to your cart and book your tickets!</p>
+                <a href="events.html" class="btn-primary">Browse Events</a>
+            </div>
+            
+            <div id="cart-summary" class="cart-summary" style="display: none;">
+                <div class="cart-summary-content">
+                    <h3>Order Summary</h3>
+                    <div class="cart-summary-row">
+                        <span>Subtotal:</span>
+                        <span id="cart-subtotal">0 SAR</span>
+                    </div>
+                    <div class="cart-summary-row cart-total">
+                        <span><strong>Total:</strong></span>
+                        <span id="cart-total"><strong>0 SAR</strong></span>
+                    </div>
+                    <button onclick="proceedToCheckout()" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Proceed to Checkout
+                    </button>
+                    <a href="events.html" class="btn-secondary" style="width: 100%; margin-top: 0.5rem; text-align: center; display: block;">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Cart management functions
+        function loadCart() {
+            const cart = getCart();
+            const cartItems = document.getElementById('cart-items');
+            const cartEmpty = document.getElementById('cart-empty');
+            const cartSummary = document.getElementById('cart-summary');
+            
+            if (cart.items.length === 0) {
+                cartItems.style.display = 'none';
+                cartEmpty.style.display = 'block';
+                cartSummary.style.display = 'none';
+                updateCartBadge();
+                return;
+            }
+            
+            cartItems.style.display = 'grid';
+            cartEmpty.style.display = 'none';
+            cartSummary.style.display = 'block';
+            
+            cartItems.innerHTML = '';
+            let total = 0;
+            
+            cart.items.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                
+                const itemElement = document.createElement('div');
+                itemElement.className = 'cart-item';
+                itemElement.innerHTML = `
+                    <img src="${item.image}" alt="${item.eventTitle}">
+                    <div class="cart-item-details">
+                        <h3>${item.eventTitle}</h3>
+                        <p><strong>Ticket Type:</strong> ${item.ticketType}</p>
+                        <p><strong>Price:</strong> ${item.price} SAR</p>
+                        <div class="cart-item-quantity">
+                            <button onclick="updateCartItemQuantity(${index}, ${item.quantity - 1})" class="quantity-btn">-</button>
+                            <span class="quantity-display">${item.quantity}</span>
+                            <button onclick="updateCartItemQuantity(${index}, ${item.quantity + 1})" class="quantity-btn">+</button>
+                        </div>
+                    </div>
+                    <div class="cart-item-actions">
+                        <div class="cart-item-total">${itemTotal} SAR</div>
+                        <button onclick="removeFromCart(${index})" class="btn-remove">
+                            <span class="material-symbols-rounded">delete</span> Remove
+                        </button>
+                    </div>
+                `;
+                cartItems.appendChild(itemElement);
+            });
+            
+            document.getElementById('cart-subtotal').textContent = total.toLocaleString() + ' SAR';
+            document.getElementById('cart-total').textContent = total.toLocaleString() + ' SAR';
+            updateCartBadge();
+        }
+        
+        function proceedToCheckout() {
+            const cart = getCart();
+            if (cart.items.length === 0) {
+                window.modalInstance.alert('Empty Cart', 'Your cart is empty. Please add items before checkout.');
+                return;
+            }
+            window.location.href = 'checkout.html';
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCart();
+            initScrollAnimations();
+        });
+    </script>
+</body>
+</html>

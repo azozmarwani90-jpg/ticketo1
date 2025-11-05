@@ -137,17 +137,40 @@ function viewBooking(bookingId) {
 }
 
 // Delete Booking
-function deleteBooking(bookingId) {
+async function deleteBooking(bookingId) {
   window.modalInstance.confirm(
     'Delete Booking',
     'Are you sure you want to delete this booking? This action cannot be undone.',
-    () => {
-      if (DB.deleteBooking(bookingId)) {
-        window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
-          loadStatistics();
-          loadBookingsTable();
-          loadAnalytics();
+    async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
         });
+        
+        if (response.ok) {
+          DB.deleteBooking(bookingId);
+          window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
+            loadStatistics();
+            loadBookingsTable();
+            loadAnalytics();
+          });
+        } else {
+          const error = await response.json();
+          window.modalInstance.error('Delete Failed', error.error || 'Failed to delete booking');
+        }
+      } catch (error) {
+        console.error('Delete booking error:', error);
+        // Fallback to local deletion
+        if (DB.deleteBooking(bookingId)) {
+          window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
+            loadStatistics();
+            loadBookingsTable();
+            loadAnalytics();
+          });
+        } else {
+          window.modalInstance.error('Delete Failed', 'Failed to delete booking');
+        }
       }
     }
   );
@@ -205,21 +228,143 @@ function deleteEvent(eventId) {
   window.modalInstance.confirm(
     'Delete Event',
     'Are you sure you want to delete this event? This action cannot be undone.',
-    () => {
-      if (DB.deleteEvent(eventId)) {
-        window.modalInstance.success('Event Deleted', 'The event has been deleted successfully!', () => {
-          loadEventsGrid();
-          loadStatistics();
+    async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/events/${eventId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
         });
-      } else {
-        window.modalInstance.error('Delete Failed', 'Unable to locate the selected event.');
+        
+        if (response.ok) {
+          DB.deleteEvent(eventId);
+          window.modalInstance.success('Event Deleted', 'The event has been deleted successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          const error = await response.json();
+          window.modalInstance.error('Delete Failed', error.error || 'Unable to delete event');
+        }
+      } catch (error) {
+        console.error('Delete event error:', error);
+        // Fallback to local deletion
+        if (DB.deleteEvent(eventId)) {
+          window.modalInstance.success('Event Deleted', 'The event has been deleted successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Delete Failed', 'Unable to locate the selected event.');
+        }
       }
     }
   );
 }
 
+// View Event
+function viewEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (event) {
+    const details = `
+      <div style="text-align: left;">
+        <p><strong>Event ID:</strong> ${event.id}</p>
+        <p><strong>Title:</strong> ${event.title}</p>
+        <p><strong>Category:</strong> ${event.category}</p>
+        <p><strong>City:</strong> ${event.city}</p>
+        <p><strong>Venue:</strong> ${event.venue}</p>
+        <p><strong>Date:</strong> ${formatDate(event.date)}</p>
+        <p><strong>Time:</strong> ${event.time}</p>
+        <p><strong>Price:</strong> ${event.price} SAR</p>
+        <p><strong>Description:</strong> ${event.description || 'N/A'}</p>
+      </div>
+    `;
+    window.modalInstance.alert('Event Details', details);
+  }
+}
+
+// Edit Event
+function editEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (!event) {
+    window.modalInstance.error('Event Not Found', 'Unable to find the selected event.');
+    return;
+  }
+  
+  window.modalInstance.showForm({
+    title: 'Edit Event',
+    fields: [
+      { name: 'title', label: 'Event Title', type: 'text', value: event.title, required: true, icon: 'T', placeholder: 'Enter event title' },
+      { name: 'category', label: 'Category', type: 'select', value: event.category, options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals'], required: true, icon: 'C' },
+      { name: 'city', label: 'City', type: 'select', value: event.city, options: ['Riyadh', 'Jeddah', 'Dammam'], required: true, icon: 'City' },
+      { name: 'venue', label: 'Venue', type: 'text', value: event.venue, required: true, icon: 'V', placeholder: 'Enter venue name' },
+      { name: 'date', label: 'Date', type: 'date', value: event.date, required: true, icon: 'D' },
+      { name: 'time', label: 'Time', type: 'time', value: event.time, required: true, icon: 'T' },
+      { name: 'price', label: 'Price (SAR)', type: 'number', value: event.price, required: true, icon: 'P', placeholder: '0' },
+      { name: 'image', label: 'Image URL', type: 'url', value: event.image, icon: 'Img' },
+      { name: 'description', label: 'Description', type: 'textarea', value: event.description || '', icon: 'Info', placeholder: 'Enter event description' }
+    ],
+    submitText: 'Save Changes',
+    onSubmit: async (data) => {
+      try {
+        const updatedEvent = {
+          title: data.title,
+          category: data.category,
+          city: data.city,
+          venue: data.venue,
+          date: data.date,
+          time: data.time,
+          price: parseFloat(data.price),
+          image: data.image,
+          description: data.description
+        };
+
+        const response = await fetch(`${API_BASE}/api/events/${eventId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedEvent)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.ok && result.event) {
+            DB.updateEvent(eventId, result.event);
+          }
+          window.modalInstance.success('Event Updated', 'The event has been updated successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          const error = await response.json();
+          window.modalInstance.error('Update Failed', error.error || 'Failed to update event');
+        }
+      } catch (error) {
+        console.error('Update event error:', error);
+        // Fallback to local update
+        if (DB.updateEvent(eventId, {
+          title: data.title,
+          category: data.category,
+          city: data.city,
+          venue: data.venue,
+          date: data.date,
+          time: data.time,
+          price: parseFloat(data.price),
+          image: data.image,
+          description: data.description
+        })) {
+          window.modalInstance.success('Event Updated', 'The event has been updated locally!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Update Failed', 'Unable to update the event.');
+        }
+      }
+    }
+  });
+}
+
 // Add New Event
-function addNewEvent() {
+async function addNewEvent() {
   window.modalInstance.showForm({
     title: 'Add New Event',
     fields: [
@@ -234,28 +379,51 @@ function addNewEvent() {
       { name: 'description', label: 'Description', type: 'textarea', icon: 'Info', placeholder: 'Enter event description' }
     ],
     submitText: 'Add Event',
-    onSubmit: (data) => {
-      const newEvent = {
-        title: data.title,
-        category: data.category,
-        city: data.city,
-        venue: data.venue,
-        date: data.date,
-        time: data.time,
-        price: parseFloat(data.price),
-        image: data.image,
-        description: data.description
-      };
+    onSubmit: async (data) => {
+      try {
+        const newEvent = {
+          title: data.title,
+          category: data.category,
+          city: data.city,
+          venue: data.venue,
+          date: data.date,
+          time: data.time,
+          price: parseFloat(data.price),
+          image: data.image,
+          description: data.description
+        };
 
-      const createdEvent = DB.addEvent(newEvent);
-
-      if (createdEvent) {
-        window.modalInstance.success('Event Added', 'The new event has been added successfully!', () => {
-          loadEventsGrid();
-          loadStatistics();
+        const response = await fetch(`${API_BASE}/api/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newEvent)
         });
-      } else {
-        window.modalInstance.error('Add Failed', 'Unable to save the new event.');
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.ok && result.event) {
+            DB.upsertEvent(result.event);
+          }
+          window.modalInstance.success('Event Added', 'The new event has been added successfully!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          const error = await response.json();
+          window.modalInstance.error('Add Failed', error.error || 'Failed to add event');
+        }
+      } catch (error) {
+        console.error('Add event error:', error);
+        // Fallback to local add
+        const createdEvent = DB.addEvent(newEvent);
+        if (createdEvent) {
+          window.modalInstance.success('Event Added', 'The new event has been added locally!', () => {
+            loadEventsGrid();
+            loadStatistics();
+          });
+        } else {
+          window.modalInstance.error('Add Failed', 'Unable to save the new event.');
+        }
       }
     }
   });

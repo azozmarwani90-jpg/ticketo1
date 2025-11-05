@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <a href="cart.html" class="cart-icon-link">
+                        <span class="material-symbols-rounded" aria-hidden="true">shopping_cart</span>
+                        <span id="cart-badge" class="cart-badge">0</span>
+                    </a>
+                </li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="min-height: 60vh;">
+        <div class="checkout-container" data-animate="up">
+            <h1 class="section-title">Checkout</h1>
+            
+            <div class="checkout-grid">
+                <!-- Customer Details -->
+                <div class="checkout-section">
+                    <h2>Customer Details</h2>
+                    <form id="checkout-form">
+                        <div class="form-group">
+                            <label for="checkout-name">Full Name *</label>
+                            <input type="text" id="checkout-name" name="name" required placeholder="Enter your full name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="checkout-email">Email Address *</label>
+                            <input type="email" id="checkout-email" name="email" required placeholder="your@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="checkout-phone">Phone Number</label>
+                            <input type="tel" id="checkout-phone" name="phone" placeholder="+966 XXX XXX XXX">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="terms" required>
+                                I agree to the <a href="#" style="color: var(--primary);">Terms and Conditions</a>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary" style="width: 100%;">
+                            Complete Booking
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="checkout-section">
+                    <h2>Order Summary</h2>
+                    <div id="checkout-items" class="checkout-items">
+                        <!-- Items will be loaded here -->
+                    </div>
+                    
+                    <div class="checkout-summary">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span id="checkout-subtotal">0 SAR</span>
+                        </div>
+                        <div class="summary-row summary-total">
+                            <span><strong>Total:</strong></span>
+                            <span id="checkout-total"><strong>0 SAR</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        function loadCheckoutSummary() {
+            const cart = getCart();
+            const checkoutItems = document.getElementById('checkout-items');
+            
+            if (cart.items.length === 0) {
+                window.location.href = 'cart.html';
+                return;
+            }
+            
+            checkoutItems.innerHTML = '';
+            let total = 0;
+            
+            cart.items.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                
+                const itemElement = document.createElement('div');
+                itemElement.className = 'checkout-item';
+                itemElement.innerHTML = `
+                    <div class="checkout-item-info">
+                        <h4>${item.eventTitle}</h4>
+                        <p>${item.ticketType} × ${item.quantity}</p>
+                    </div>
+                    <div class="checkout-item-price">${itemTotal} SAR</div>
+                `;
+                checkoutItems.appendChild(itemElement);
+            });
+            
+            document.getElementById('checkout-subtotal').textContent = total.toLocaleString() + ' SAR';
+            document.getElementById('checkout-total').textContent = total.toLocaleString() + ' SAR';
+            updateCartBadge();
+        }
+        
+        async function processCheckout(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('checkout-name').value.trim();
+            const email = document.getElementById('checkout-email').value.trim();
+            const phone = document.getElementById('checkout-phone').value.trim();
+            
+            const cart = getCart();
+            if (cart.items.length === 0) {
+                window.modalInstance.alert('Empty Cart', 'Your cart is empty.');
+                return;
+            }
+            
+            // Process each item as a booking
+            const bookingPromises = cart.items.map(async item => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/bookings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name,
+                            email: email,
+                            eventId: item.eventId,
+                            tickets: item.quantity
+                        })
+                    });
+                    
+                    if (!response.ok) throw new Error('Booking failed');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Booking error:', error);
+                    return null;
+                }
+            });
+            
+            const results = await Promise.all(bookingPromises);
+            const successfulBookings = results.filter(r => r && r.ok);
+            
+            if (successfulBookings.length > 0) {
+                // Store last booking for confirmation page
+                localStorage.setItem('last_booking', JSON.stringify({
+                    ok: true,
+                    booking: successfulBookings[0].booking,
+                    count: successfulBookings.length
+                }));
+                
+                // Clear cart
+                clearCart();
+                
+                // Redirect to confirmation
+                window.location.href = 'confirm.html';
+            } else {
+                window.modalInstance.error('Booking Failed', 'Failed to process your bookings. Please try again.');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCheckoutSummary();
+            initScrollAnimations();
+            
+            // Pre-fill form if user is logged in
+            if (Auth.isLoggedIn()) {
+                document.getElementById('checkout-name').value = Auth.currentUser.name || '';
+                document.getElementById('checkout-email').value = Auth.currentUser.email || '';
+                document.getElementById('checkout-phone').value = Auth.currentUser.phone || '';
+            }
+            
+            document.getElementById('checkout-form').addEventListener('submit', processCheckout);
+        });
+    </script>
+</body>
+</html>

@@ -66,7 +66,8 @@ function normalizeBooking(record) {
 // --- API calls --------------------------------------------------------------
 async function fetchEventsFromApi() {
   try {
-    const response = await fetch(`${API_BASE}/api/events`);
+    const timestamp = Date.now(); // Cache buster
+    const response = await fetch(`${API_BASE}/api/events?t=${timestamp}`);
     if (!response.ok) throw new Error('Failed to load events');
     const payload = await safeJson(response);
     const eventsRaw = Array.isArray(payload) ? payload : (payload && payload.data) || [];
@@ -398,6 +399,125 @@ class TicketoDatabase {
 }
 const DB = new TicketoDatabase();
 
+// --- Cart Management --------------------------------------------------------
+class CartManager {
+  constructor() {
+    this.storageKey = 'ticketo_cart';
+  }
+  
+  getCart() {
+    try {
+      const cartData = localStorage.getItem(this.storageKey);
+      return cartData ? JSON.parse(cartData) : { items: [] };
+    } catch (error) {
+      console.error('Failed to load cart:', error);
+      return { items: [] };
+    }
+  }
+  
+  saveCart(cart) {
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(cart));
+      this.updateBadge();
+    } catch (error) {
+      console.error('Failed to save cart:', error);
+    }
+  }
+  
+  addToCart(item) {
+    const cart = this.getCart();
+    const existingIndex = cart.items.findIndex(
+      i => i.eventId === item.eventId && i.ticketType === item.ticketType
+    );
+    
+    if (existingIndex > -1) {
+      cart.items[existingIndex].quantity += item.quantity;
+    } else {
+      cart.items.push(item);
+    }
+    
+    this.saveCart(cart);
+    return cart;
+  }
+  
+  removeFromCart(index) {
+    const cart = this.getCart();
+    if (index >= 0 && index < cart.items.length) {
+      cart.items.splice(index, 1);
+      this.saveCart(cart);
+    }
+    return cart;
+  }
+  
+  updateItemQuantity(index, quantity) {
+    const cart = this.getCart();
+    if (index >= 0 && index < cart.items.length) {
+      if (quantity <= 0) {
+        cart.items.splice(index, 1);
+      } else {
+        cart.items[index].quantity = Math.min(quantity, 10);
+      }
+      this.saveCart(cart);
+    }
+    return cart;
+  }
+  
+  clearCart() {
+    this.saveCart({ items: [] });
+  }
+  
+  getItemCount() {
+    const cart = this.getCart();
+    return cart.items.reduce((total, item) => total + item.quantity, 0);
+  }
+  
+  updateBadge() {
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      const count = this.getItemCount();
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  }
+}
+
+const Cart = new CartManager();
+
+// Global cart functions for easy access
+function getCart() {
+  return Cart.getCart();
+}
+
+function addToCart(item) {
+  return Cart.addToCart(item);
+}
+
+function removeFromCart(index) {
+  const cart = Cart.removeFromCart(index);
+  // Reload cart page if we're on it
+  if (window.location.pathname.includes('cart.html') && typeof loadCart === 'function') {
+    loadCart();
+  }
+  return cart;
+}
+
+function updateCartItemQuantity(index, quantity) {
+  const cart = Cart.updateItemQuantity(index, quantity);
+  // Reload cart page if we're on it
+  if (window.location.pathname.includes('cart.html') && typeof loadCart === 'function') {
+    loadCart();
+  }
+  return cart;
+}
+
+function clearCart() {
+  Cart.clearCart();
+}
+
+function updateCartBadge() {
+  Cart.updateBadge();
+}
+
 // --- Auth -------------------------------------------------------------------
 class AuthSystem {
   constructor(){ this.currentUser = this.getCurrentUser(); }
@@ -436,18 +556,38 @@ let revealObserver;
 function updateNavigation(){
   const navLinks = document.querySelector('.nav-links'); if (!navLinks) return;
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
+  
+  // Add cart icon if it doesn't exist
+  let cartLi = navLinks.querySelector('.cart-link');
+  if (!cartLi) {
+    cartLi = document.createElement('li');
+    cartLi.className = 'cart-link';
+    cartLi.innerHTML = `<a href="cart.html" class="cart-icon-link">
+      <span class="material-symbols-rounded" aria-hidden="true">shopping_cart</span>
+      <span id="cart-badge" class="cart-badge">0</span>
+    </a>`;
+    const themeToggleLi = navLinks.querySelector('li:has(#theme-toggle)') || navLinks.lastElementChild;
+    navLinks.insertBefore(cartLi, themeToggleLi);
+  }
+  
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
-    const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
+    const homeLink='index.html'; 
+    const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; 
+    const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
     const initials=(Auth.currentUser.name||'U').split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).join('').slice(0,2)||'U';
     li.innerHTML = `<div class="nav-user-menu">
       <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
       <div id="user-dropdown" class="nav-user-dropdown">
         <a href="${homeLink}" class="nav-user-link">Home</a>
-        <a href="${dashLink}" class="nav-user-link">${dashLabel}</a>
+        ${Auth.isAdmin() ? 
+          `<a href="${dashLink}" class="nav-user-link">${dashLabel}</a>` : 
+          `<a href="profile.html#bookings" class="nav-user-link">View My Bookings</a>
+           <a href="profile.html#edit" class="nav-user-link">My Profile</a>`
+        }
         <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
       </div></div>`;
-    navLinks.insertBefore(li, navLinks.lastElementChild);
+    navLinks.insertBefore(li, cartLi);
     setTimeout(()=>{
       const wrap = document.querySelector('.nav-user-menu');
       const btn = document.getElementById('user-menu-btn');
@@ -462,9 +602,12 @@ function updateNavigation(){
   } else {
     const inLi=document.createElement('li'); inLi.className='auth-link'; inLi.innerHTML='<a href="signin.html">Sign In</a>';
     const upLi=document.createElement('li'); upLi.className='auth-link'; upLi.innerHTML='<a href="signup.html" class="btn-primary" style="padding:0.6rem 1.5rem;font-size:0.9rem;">Sign Up</a>';
-    navLinks.insertBefore(inLi, navLinks.lastElementChild);
-    navLinks.insertBefore(upLi, navLinks.lastElementChild);
+    navLinks.insertBefore(inLi, cartLi);
+    navLinks.insertBefore(upLi, cartLi);
   }
+  
+  // Update cart badge
+  updateCartBadge();
 }
 document.addEventListener('DOMContentLoaded', updateNavigation);
 
@@ -616,7 +759,45 @@ async function initEventDetail(){
   document.getElementById('increase-qty').addEventListener('click', ()=>{ if (qty<10){ qty++; document.getElementById('quantity').textContent=qty; update(); } });
   function update(){ const total=selected.price*qty; document.getElementById('total-price').textContent = total.toLocaleString()+' SAR'; }
   update();
-  const btn=document.getElementById('book-btn'); btn && btn.addEventListener('click', ()=>{ localStorage.setItem('selectedEventId', String(ev.id)); localStorage.removeItem('last_booking'); window.location.href='booking.html'; });
+  
+  const btn=document.getElementById('book-btn'); 
+  if (btn) {
+    // Update button text to show both options
+    btn.textContent = 'Add to Cart';
+    
+    btn.addEventListener('click', ()=>{ 
+      // Add to cart
+      const cartItem = {
+        eventId: String(ev.id),
+        eventTitle: ev.title,
+        ticketType: selected.type,
+        quantity: qty,
+        price: selected.price,
+        image: ev.image
+      };
+      
+      addToCart(cartItem);
+      
+      window.modalInstance.success(
+        'Added to Cart',
+        `${qty} × ${selected.type} ticket${qty > 1 ? 's' : ''} for "${ev.title}" added to your cart!`,
+        () => {
+          // Ask user what they want to do next
+          window.modalInstance.confirm(
+            'Continue Shopping?',
+            'Would you like to continue shopping or go to checkout?',
+            () => {
+              // Go to cart/checkout
+              window.location.href = 'cart.html';
+            },
+            () => {
+              // Continue shopping - just close modal
+            }
+          );
+        }
+      );
+    });
+  }
 }
 
 // Initialize Leaflet map for event detail page
@@ -818,7 +999,36 @@ function initConfirmationPage(){
 }
 
 // Profile page
-async function initProfilePage(){ await fetchBookingsFromApi(); loadUserStats(); loadUserBookings(); initUserFilters(); }
+async function initProfilePage(){ 
+  await fetchBookingsFromApi(); 
+  loadUserStats(); 
+  loadUserBookings(); 
+  initUserFilters(); 
+  handleProfileHash();
+}
+
+// Handle profile page hash navigation
+function handleProfileHash() {
+  const hash = window.location.hash;
+  
+  if (hash === '#edit') {
+    // Open edit profile modal
+    setTimeout(() => {
+      editProfile();
+    }, 300);
+  } else if (hash === '#bookings') {
+    // Scroll to bookings section
+    const bookingsSection = document.querySelector('.bookings-section');
+    if (bookingsSection) {
+      bookingsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}
+
+// Listen for hash changes on profile page
+if (window.location.pathname.includes('profile.html')) {
+  window.addEventListener('hashchange', handleProfileHash);
+}
 function loadUserStats(){
   const all = cachedBookings || DB.getAllBookings(); let mine = all;
   if (Auth.isLoggedIn() && !Auth.isAdmin()) mine = all.filter(b=>b.userEmail===Auth.currentUser.email);
