@@ -17,6 +17,112 @@ async function safeJson(res) {
 let cachedEvents = null;
 let cachedBookings = null;
 
+// --- Cart System ------------------------------------------------------------
+class CartSystem {
+  constructor() {
+    this.storageKey = 'ticketo_cart';
+    this.cartBadge = null;
+  }
+  
+  getCart() {
+    try {
+      const cart = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      return Array.isArray(cart) ? cart : [];
+    } catch {
+      return [];
+    }
+  }
+  
+  saveCart(cart) {
+    localStorage.setItem(this.storageKey, JSON.stringify(cart));
+    this.updateCartUI();
+  }
+  
+  addItem(event, quantity = 1, ticketType = 'General') {
+    const cart = this.getCart();
+    const eventId = String(event.id);
+    const existingIndex = cart.findIndex(item => String(item.eventId) === eventId && item.ticketType === ticketType);
+    
+    if (existingIndex !== -1) {
+      cart[existingIndex].quantity += quantity;
+    } else {
+      cart.push({
+        eventId: eventId,
+        eventTitle: event.title,
+        eventImage: event.image,
+        venue: event.venue,
+        city: event.city,
+        date: event.date,
+        time: event.time,
+        price: event.price,
+        quantity: quantity,
+        ticketType: ticketType,
+        addedAt: new Date().toISOString()
+      });
+    }
+    
+    this.saveCart(cart);
+    return true;
+  }
+  
+  removeItem(eventId, ticketType = 'General') {
+    let cart = this.getCart();
+    cart = cart.filter(item => !(String(item.eventId) === String(eventId) && item.ticketType === ticketType));
+    this.saveCart(cart);
+  }
+  
+  updateQuantity(eventId, ticketType, quantity) {
+    const cart = this.getCart();
+    const item = cart.find(item => String(item.eventId) === String(eventId) && item.ticketType === ticketType);
+    if (item) {
+      item.quantity = Math.max(1, Math.min(10, quantity));
+      this.saveCart(cart);
+      return true;
+    }
+    return false;
+  }
+  
+  clearCart() {
+    this.saveCart([]);
+  }
+  
+  getItemCount() {
+    return this.getCart().reduce((sum, item) => sum + item.quantity, 0);
+  }
+  
+  getTotal() {
+    return this.getCart().reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+  
+  updateCartUI() {
+    const count = this.getItemCount();
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  }
+  
+  async getCartWithEventDetails() {
+    const cart = this.getCart();
+    const result = [];
+    for (const item of cart) {
+      const event = await fetchEventFromApi(item.eventId);
+      if (event) {
+        result.push({
+          ...item,
+          event: event
+        });
+      } else {
+        result.push(item);
+      }
+    }
+    return result;
+  }
+}
+
+window.Cart = new CartSystem();
+
 // --- Normalizers ------------------------------------------------------------
 function normalizeEvent(event) {
   if (!event) return null;
@@ -854,14 +960,35 @@ function loadUserBookings(status='all'){
   });
 }
 function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      // Call API to update booking status
+      const response = await fetch(`${API_BASE}/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      
+      const data = await safeJson(response);
+      
+      if (response.ok && data && data.ok) {
+        // Update local database
+        DB.updateBookingStatus(id, 'cancelled');
+        cachedBookings = await fetchBookingsFromApi();
+        
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
+          loadUserStats(); 
+          loadUserBookings();
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to cancel booking');
+      }
+    } catch (error) {
+      console.error('Failed to cancel booking:', error);
+      window.modalInstance.error('Cancellation Failed', error.message || 'Failed to cancel booking. Please try again.');
     }
+  });
+}
   });
 }
 function initUserFilters(){
@@ -919,11 +1046,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:''},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:''},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:''},
+      {name:'age',label:'Age',type:'number',value:u.age||'',icon:''},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:''}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{

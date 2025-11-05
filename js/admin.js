@@ -1,5 +1,9 @@
 ﻿// Admin Dashboard JavaScript
 
+// API Configuration
+const API_HOST = window.location.hostname || '127.0.0.1';
+const API_BASE = `http://${API_HOST}:4000`;
+
 // Initialize Admin Dashboard
 function initAdminDashboard() {
   loadStatistics();
@@ -141,13 +145,28 @@ function deleteBooking(bookingId) {
   window.modalInstance.confirm(
     'Delete Booking',
     'Are you sure you want to delete this booking? This action cannot be undone.',
-    () => {
-      if (DB.deleteBooking(bookingId)) {
-        window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
-          loadStatistics();
-          loadBookingsTable();
-          loadAnalytics();
+    async () => {
+      try {
+        // Call API to delete booking
+        const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+          method: 'DELETE'
         });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete booking from server');
+        }
+        
+        // Update local database
+        if (DB.deleteBooking(bookingId)) {
+          window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
+            loadStatistics();
+            loadBookingsTable();
+            loadAnalytics();
+          });
+        }
+      } catch (error) {
+        console.error('Failed to delete booking:', error);
+        window.modalInstance.error('Delete Failed', 'Failed to delete booking. Please try again.');
       }
     }
   );
