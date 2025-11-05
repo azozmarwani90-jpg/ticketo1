@@ -1,5 +1,48 @@
 ﻿// Admin Dashboard JavaScript
 
+// API Configuration
+const API_HOST = window.location.hostname || '127.0.0.1';
+const API_BASE = `http://${API_HOST}:4000`;
+
+// Real-time sync - poll for updates every 10 seconds
+let syncInterval = null;
+
+function startRealtimeSync() {
+  if (syncInterval) return; // Already running
+  
+  syncInterval = setInterval(async () => {
+    try {
+      // Fetch latest bookings from server
+      const response = await fetch(`${API_BASE}/api/bookings`);
+      if (response.ok) {
+        const bookings = await response.json();
+        const db = DB.getDatabase();
+        const oldCount = db.bookings.length;
+        
+        // Update local database
+        DB.setBookings(bookings);
+        
+        // Refresh UI if bookings changed
+        const newCount = bookings.length;
+        if (newCount !== oldCount) {
+          loadStatistics();
+          loadBookingsTable();
+          loadAnalytics();
+        }
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
+  }, 10000); // Poll every 10 seconds
+}
+
+function stopRealtimeSync() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+}
+
 // Initialize Admin Dashboard
 function initAdminDashboard() {
   loadStatistics();
@@ -10,6 +53,17 @@ function initAdminDashboard() {
   initTabSwitching();
   initFilterButtons();
   initSettingsActions();
+  initAdminSearch();
+  startRealtimeSync();
+  
+  // Stop sync when page is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopRealtimeSync();
+    } else {
+      startRealtimeSync();
+    }
+  });
 }
 
 // Load Statistics
@@ -141,13 +195,28 @@ function deleteBooking(bookingId) {
   window.modalInstance.confirm(
     'Delete Booking',
     'Are you sure you want to delete this booking? This action cannot be undone.',
-    () => {
-      if (DB.deleteBooking(bookingId)) {
-        window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
-          loadStatistics();
-          loadBookingsTable();
-          loadAnalytics();
+    async () => {
+      try {
+        // Call API to delete booking
+        const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+          method: 'DELETE'
         });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete booking from server');
+        }
+        
+        // Update local database
+        if (DB.deleteBooking(bookingId)) {
+          window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
+            loadStatistics();
+            loadBookingsTable();
+            loadAnalytics();
+          });
+        }
+      } catch (error) {
+        console.error('Failed to delete booking:', error);
+        window.modalInstance.error('Delete Failed', 'Failed to delete booking. Please try again.');
       }
     }
   );
@@ -216,6 +285,70 @@ function deleteEvent(eventId) {
       }
     }
   );
+}
+
+// Edit Event
+function editEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  
+  if (!event) {
+    window.modalInstance.error('Event Not Found', 'Unable to locate the selected event.');
+    return;
+  }
+  
+  window.modalInstance.showForm({
+    title: 'Edit Event',
+    fields: [
+      { name: 'title', label: 'Event Title', type: 'text', value: event.title || '', required: true, icon: 'T', placeholder: 'Enter event title' },
+      { name: 'category', label: 'Category', type: 'select', value: event.category || 'General', options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals', 'General'], required: true, icon: 'C' },
+      { name: 'city', label: 'City', type: 'select', value: event.city || 'Riyadh', options: ['Riyadh', 'Jeddah', 'Dammam'], required: true, icon: 'City' },
+      { name: 'venue', label: 'Venue', type: 'text', value: event.venue || '', required: true, icon: 'V', placeholder: 'Enter venue name' },
+      { name: 'date', label: 'Date', type: 'date', value: event.date || '', required: true, icon: 'D' },
+      { name: 'time', label: 'Time', type: 'time', value: event.time || '', required: true, icon: 'T' },
+      { name: 'price', label: 'Price (SAR)', type: 'number', value: event.price || 0, required: true, icon: 'P', placeholder: '0' },
+      { name: 'image', label: 'Image URL', type: 'url', value: event.image || '', icon: 'Img' },
+      { name: 'description', label: 'Description', type: 'textarea', value: event.description || '', icon: 'Info', placeholder: 'Enter event description' }
+    ],
+    submitText: 'Save Changes',
+    onSubmit: async (data) => {
+      try {
+        const updatedEvent = {
+          id: event.id,
+          title: data.title,
+          category: data.category,
+          city: data.city,
+          venue: data.venue,
+          date: data.date,
+          time: data.time,
+          price: parseFloat(data.price),
+          image: data.image,
+          description: data.description
+        };
+
+        // Call API to update event
+        const response = await fetch(`${API_BASE}/api/events/${event.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedEvent)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update event on server');
+        }
+
+        // Update local database
+        DB.upsertEvent(updatedEvent);
+
+        window.modalInstance.success('Event Updated', 'The event has been updated successfully!', () => {
+          loadEventsGrid();
+          loadStatistics();
+        });
+      } catch (error) {
+        console.error('Failed to update event:', error);
+        window.modalInstance.error('Update Failed', 'Failed to update event. Please try again.');
+      }
+    }
+  });
 }
 
 // Add New Event
@@ -498,6 +631,51 @@ function initSettingsActions() {
       }
     );
   });
+}
+
+// Admin Search Functionality
+function initAdminSearch() {
+  // Bookings search
+  const bookingsSearch = document.getElementById('bookings-search');
+  if (bookingsSearch) {
+    bookingsSearch.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('#bookings-table-body tr');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+  }
+  
+  // Events search
+  const eventsSearch = document.getElementById('events-search');
+  if (eventsSearch) {
+    eventsSearch.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const cards = document.querySelectorAll('.admin-event-card');
+      
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+  }
+  
+  // Users search
+  const usersSearch = document.getElementById('users-search');
+  if (usersSearch) {
+    usersSearch.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('#users-table-body tr');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    });
+  }
 }
 
 // Format Date Helper

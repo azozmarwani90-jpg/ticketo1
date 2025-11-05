@@ -17,6 +17,112 @@ async function safeJson(res) {
 let cachedEvents = null;
 let cachedBookings = null;
 
+// --- Cart System ------------------------------------------------------------
+class CartSystem {
+  constructor() {
+    this.storageKey = 'ticketo_cart';
+    this.cartBadge = null;
+  }
+  
+  getCart() {
+    try {
+      const cart = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      return Array.isArray(cart) ? cart : [];
+    } catch {
+      return [];
+    }
+  }
+  
+  saveCart(cart) {
+    localStorage.setItem(this.storageKey, JSON.stringify(cart));
+    this.updateCartUI();
+  }
+  
+  addItem(event, quantity = 1, ticketType = 'General') {
+    const cart = this.getCart();
+    const eventId = String(event.id);
+    const existingIndex = cart.findIndex(item => String(item.eventId) === eventId && item.ticketType === ticketType);
+    
+    if (existingIndex !== -1) {
+      cart[existingIndex].quantity += quantity;
+    } else {
+      cart.push({
+        eventId: eventId,
+        eventTitle: event.title,
+        eventImage: event.image,
+        venue: event.venue,
+        city: event.city,
+        date: event.date,
+        time: event.time,
+        price: event.price,
+        quantity: quantity,
+        ticketType: ticketType,
+        addedAt: new Date().toISOString()
+      });
+    }
+    
+    this.saveCart(cart);
+    return true;
+  }
+  
+  removeItem(eventId, ticketType = 'General') {
+    let cart = this.getCart();
+    cart = cart.filter(item => !(String(item.eventId) === String(eventId) && item.ticketType === ticketType));
+    this.saveCart(cart);
+  }
+  
+  updateQuantity(eventId, ticketType, quantity) {
+    const cart = this.getCart();
+    const item = cart.find(item => String(item.eventId) === String(eventId) && item.ticketType === ticketType);
+    if (item) {
+      item.quantity = Math.max(1, Math.min(10, quantity));
+      this.saveCart(cart);
+      return true;
+    }
+    return false;
+  }
+  
+  clearCart() {
+    this.saveCart([]);
+  }
+  
+  getItemCount() {
+    return this.getCart().reduce((sum, item) => sum + item.quantity, 0);
+  }
+  
+  getTotal() {
+    return this.getCart().reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+  
+  updateCartUI() {
+    const count = this.getItemCount();
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  }
+  
+  async getCartWithEventDetails() {
+    const cart = this.getCart();
+    const result = [];
+    for (const item of cart) {
+      const event = await fetchEventFromApi(item.eventId);
+      if (event) {
+        result.push({
+          ...item,
+          event: event
+        });
+      } else {
+        result.push(item);
+      }
+    }
+    return result;
+  }
+}
+
+window.Cart = new CartSystem();
+
 // --- Normalizers ------------------------------------------------------------
 function normalizeEvent(event) {
   if (!event) return null;
@@ -121,13 +227,13 @@ async function fetchBookingsFromApi() {
   }
 }
 
-async function createBookingOnServer({ name, email, eventId, tickets }) {
+async function createBookingOnServer({ name, email, eventId, tickets, promoCode }) {
   let response;
   try {
     response = await fetch(`${API_BASE}/api/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, eventId, tickets })
+      body: JSON.stringify({ name, email, eventId, tickets, promoCode })
     });
   } catch {
     throw new Error('Network unreachable');
@@ -436,6 +542,17 @@ let revealObserver;
 function updateNavigation(){
   const navLinks = document.querySelector('.nav-links'); if (!navLinks) return;
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
+  
+  // Add cart badge if not exists
+  if (!document.querySelector('.cart-link')) {
+    const cartLi = document.createElement('li');
+    cartLi.innerHTML = `<a href="checkout.html" class="cart-link">
+      <span class="material-symbols-rounded">shopping_cart</span>
+      <span id="cart-badge" class="cart-badge">0</span>
+    </a>`;
+    navLinks.insertBefore(cartLi, navLinks.lastElementChild);
+  }
+  
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
     const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
@@ -464,6 +581,11 @@ function updateNavigation(){
     const upLi=document.createElement('li'); upLi.className='auth-link'; upLi.innerHTML='<a href="signup.html" class="btn-primary" style="padding:0.6rem 1.5rem;font-size:0.9rem;">Sign Up</a>';
     navLinks.insertBefore(inLi, navLinks.lastElementChild);
     navLinks.insertBefore(upLi, navLinks.lastElementChild);
+  }
+  
+  // Update cart badge after navigation is updated
+  if (typeof Cart !== 'undefined') {
+    Cart.updateCartUI();
   }
 }
 document.addEventListener('DOMContentLoaded', updateNavigation);
@@ -569,7 +691,15 @@ function initFilters(){
   const priceValue=document.getElementById('price-value');
   function run(){
     let filtered=[...(cachedEvents || DB.getAllEvents())];
-    if (searchInput && searchInput.value){ const q=searchInput.value.toLowerCase(); filtered = filtered.filter(e=> e.title.toLowerCase().includes(q) || e.description.toLowerCase().includes(q)); }
+    if (searchInput && searchInput.value){ 
+      const q=searchInput.value.toLowerCase(); 
+      filtered = filtered.filter(e=> 
+        e.title.toLowerCase().includes(q) || 
+        e.description.toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q) ||
+        e.city.toLowerCase().includes(q)
+      ); 
+    }
     if (categoryFilter && categoryFilter.value!=='all') filtered = filtered.filter(e=> e.category === categoryFilter.value);
     if (cityFilter && cityFilter.value!=='all') filtered = filtered.filter(e=> e.city === cityFilter.value);
     if (priceRange){ const max=parseInt(priceRange.value,10); filtered = filtered.filter(e=> e.price <= max); }
@@ -616,7 +746,26 @@ async function initEventDetail(){
   document.getElementById('increase-qty').addEventListener('click', ()=>{ if (qty<10){ qty++; document.getElementById('quantity').textContent=qty; update(); } });
   function update(){ const total=selected.price*qty; document.getElementById('total-price').textContent = total.toLocaleString()+' SAR'; }
   update();
-  const btn=document.getElementById('book-btn'); btn && btn.addEventListener('click', ()=>{ localStorage.setItem('selectedEventId', String(ev.id)); localStorage.removeItem('last_booking'); window.location.href='booking.html'; });
+  
+  // Book Now button
+  const btn=document.getElementById('book-btn'); 
+  btn && btn.addEventListener('click', ()=>{ 
+    localStorage.setItem('selectedEventId', String(ev.id)); 
+    localStorage.removeItem('last_booking'); 
+    window.location.href='booking.html'; 
+  });
+  
+  // Add to Cart button
+  const cartBtn=document.getElementById('add-to-cart-btn');
+  cartBtn && cartBtn.addEventListener('click', ()=>{
+    if (Cart.addItem(ev, qty, selected.type)) {
+      window.modalInstance.success('Added to Cart', `${qty} x ${selected.type} ticket(s) added to cart!`, ()=>{
+        // Optionally redirect to checkout or stay on page
+      });
+    } else {
+      window.modalInstance.error('Error', 'Failed to add to cart. Please try again.');
+    }
+  });
 }
 
 // Initialize Leaflet map for event detail page
@@ -818,7 +967,30 @@ function initConfirmationPage(){
 }
 
 // Profile page
-async function initProfilePage(){ await fetchBookingsFromApi(); loadUserStats(); loadUserBookings(); initUserFilters(); }
+async function initProfilePage(){ 
+  await fetchBookingsFromApi(); 
+  loadUserStats(); 
+  loadUserBookings(); 
+  initUserFilters();
+  
+  // Start real-time sync for profile page
+  const profileSyncInterval = setInterval(async () => {
+    try {
+      const updated = await fetchBookingsFromApi();
+      if (updated) {
+        loadUserStats();
+        loadUserBookings();
+      }
+    } catch (error) {
+      console.error('Profile sync failed:', error);
+    }
+  }, 10000);
+  
+  // Clean up interval when leaving page
+  window.addEventListener('beforeunload', () => {
+    clearInterval(profileSyncInterval);
+  });
+}
 function loadUserStats(){
   const all = cachedBookings || DB.getAllBookings(); let mine = all;
   if (Auth.isLoggedIn() && !Auth.isAdmin()) mine = all.filter(b=>b.userEmail===Auth.currentUser.email);
@@ -854,14 +1026,35 @@ function loadUserBookings(status='all'){
   });
 }
 function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      // Call API to update booking status
+      const response = await fetch(`${API_BASE}/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      
+      const data = await safeJson(response);
+      
+      if (response.ok && data && data.ok) {
+        // Update local database
+        DB.updateBookingStatus(id, 'cancelled');
+        cachedBookings = await fetchBookingsFromApi();
+        
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
+          loadUserStats(); 
+          loadUserBookings();
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to cancel booking');
+      }
+    } catch (error) {
+      console.error('Failed to cancel booking:', error);
+      window.modalInstance.error('Cancellation Failed', error.message || 'Failed to cancel booking. Please try again.');
     }
+  });
+}
   });
 }
 function initUserFilters(){
@@ -919,11 +1112,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:''},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:''},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:''},
+      {name:'age',label:'Age',type:'number',value:u.age||'',icon:''},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:''}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{

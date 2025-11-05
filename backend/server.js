@@ -263,6 +263,91 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
+// Update booking status
+app.put('/api/bookings/:id', (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const { status } = req.body || {};
+    
+    if (!status) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Missing status field' });
+    }
+
+    const db = readDB();
+    const booking = db.bookings.find(b => String(b.id) === String(bookingId));
+    
+    if (!booking) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    booking.status = status;
+    booking.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, booking });
+  } catch (error) {
+    console.error('Failed to update booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update booking' });
+  }
+});
+
+// Delete booking
+app.delete('/api/bookings/:id', (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const db = readDB();
+    const index = db.bookings.findIndex(b => String(b.id) === String(bookingId));
+    
+    if (index === -1) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    db.bookings.splice(index, 1);
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete booking' });
+  }
+});
+
+// Update event
+app.put('/api/events/:id', (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const updates = req.body || {};
+    
+    const db = readDB();
+    const event = findEvent(db.events || [], eventId);
+    
+    if (!event) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Event not found' });
+    }
+
+    // Update event with new data
+    Object.assign(event, updates);
+    event.updatedAt = new Date().toISOString();
+    
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, event });
+  } catch (error) {
+    console.error('Failed to update event:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update event' });
+  }
+});
+
 // Optional static hosting (uncomment when needed)
 // const FRONTEND_DIR = path.resolve(__dirname, '..');
 // app.use(express.static(FRONTEND_DIR));
