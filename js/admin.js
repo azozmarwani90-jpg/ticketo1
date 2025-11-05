@@ -1,3 +1,44 @@
+// Admin-specific navigation (shows only Profile and Sign Out)
+function updateAdminNavigation() {
+  const navLinks = document.querySelector('.nav-links');
+  if (!navLinks) return;
+  
+  navLinks.querySelectorAll('.auth-link').forEach(l => l.remove());
+  
+  if (Auth.isLoggedIn()) {
+    const li = document.createElement('li');
+    li.className = 'auth-link';
+    const initials = (Auth.currentUser.name || 'A').split(' ').filter(Boolean).map(p => p[0].toUpperCase()).join('').slice(0, 2) || 'A';
+    
+    // Admin nav: only Profile and Sign Out
+    li.innerHTML = `<div class="nav-user-menu">
+      <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
+      <div id="user-dropdown" class="nav-user-dropdown">
+        <a href="../profile.html" class="nav-user-link">Profile</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
+      </div></div>`;
+    
+    navLinks.insertBefore(li, navLinks.lastElementChild);
+    
+    setTimeout(() => {
+      const wrap = document.querySelector('.nav-user-menu');
+      const btn = document.getElementById('user-menu-btn');
+      const dd = document.getElementById('user-dropdown');
+      const so = document.getElementById('signout-btn');
+      
+      if (wrap && btn && dd) {
+        const outside = (e) => { if (!wrap.contains(e.target)) { wrap.classList.remove('open'); document.removeEventListener('click', outside); } };
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const open = wrap.classList.toggle('open'); if (open) document.addEventListener('click', outside); else document.removeEventListener('click', outside); });
+      }
+      
+      if (so) { so.addEventListener('click', (e) => { e.preventDefault(); window.modalInstance.confirm('Sign Out', 'Are you sure you want to sign out?', () => { wrap && wrap.classList.remove('open'); Auth.signout(); }); }); }
+    }, 100);
+  }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', updateAdminNavigation);
+
 ﻿// Admin Dashboard JavaScript
 
 // Initialize Admin Dashboard
