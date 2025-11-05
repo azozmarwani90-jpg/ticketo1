@@ -159,10 +159,14 @@
         }
         
         function removeFromCart(eventId){
-            if (confirm('Remove this item from cart?')){
-                Cart.removeItem(eventId);
-                renderCart();
-            }
+            window.modalInstance.confirm(
+                'Remove Item',
+                'Remove this item from cart?',
+                () => {
+                    Cart.removeItem(eventId);
+                    renderCart();
+                }
+            );
         }
         
         function updateOrderSummary(){

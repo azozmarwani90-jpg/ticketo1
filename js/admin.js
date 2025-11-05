@@ -157,7 +157,6 @@ async function deleteBooking(bookingId) {
         
         // Delete locally
         DB.deleteBooking(bookingId);
-        cachedBookings = DB.getAllBookings();
         
         window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
           loadStatistics();
@@ -168,7 +167,6 @@ async function deleteBooking(bookingId) {
         console.error('Delete booking error:', error);
         // Still delete locally if server fails
         if (DB.deleteBooking(bookingId)) {
-          cachedBookings = DB.getAllBookings();
           window.modalInstance.success('Booking Deleted', 'Booking deleted locally. Server sync may be pending.', () => {
             loadStatistics();
             loadBookingsTable();
