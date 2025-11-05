@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="checkout-container" data-animate="up">
+        <h1 class="page-title">Checkout</h1>
+
+        <div class="checkout-grid">
+            <!-- Cart Items -->
+            <div class="checkout-cart">
+                <h2>Your Cart</h2>
+                <div id="cart-items" class="cart-items-list">
+                    <!-- Cart items will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="checkout-sidebar">
+                <div class="order-summary">
+                    <h3>Order Summary</h3>
+                    
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal-amount">0 SAR</span>
+                    </div>
+                    
+                    <div class="promo-code-section">
+                        <h4>Promo Code</h4>
+                        <div class="promo-input-group">
+                            <input type="text" id="promo-code" placeholder="Enter promo code">
+                            <button type="button" id="apply-promo" class="btn-secondary">Apply</button>
+                        </div>
+                        <div id="promo-message" class="promo-message"></div>
+                    </div>
+                    
+                    <div class="summary-row discount-row" id="discount-row" style="display: none;">
+                        <span>Discount</span>
+                        <span id="discount-amount" class="discount-text">-0 SAR</span>
+                    </div>
+                    
+                    <div class="summary-divider"></div>
+                    
+                    <div class="summary-row total-row">
+                        <span>Total</span>
+                        <span id="total-amount" class="total-price">0 SAR</span>
+                    </div>
+                    
+                    <button type="button" id="proceed-checkout" class="btn-primary btn-block">
+                        Proceed to Payment
+                    </button>
+                    
+                    <a href="events.html" class="btn-tertiary btn-block" style="margin-top: 0.5rem; text-align: center; display: block;">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Checkout page functionality
+        let promoCodes = {
+            'WELCOME10': { type: 'percentage', value: 10, description: '10% off your order' },
+            'SAVE20': { type: 'percentage', value: 20, description: '20% off your order' },
+            'FIFTY': { type: 'fixed', value: 50, description: '50 SAR off your order' }
+        };
+        
+        let appliedPromo = null;
+        
+        function renderCart(){
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cart = Cart.getCart();
+            
+            if (cart.length === 0){
+                cartItemsContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <div class="empty-icon">
+                            <span class="material-symbols-rounded">shopping_cart</span>
+                        </div>
+                        <h3>Your cart is empty</h3>
+                        <p>Add some events to your cart to get started!</p>
+                        <a href="events.html" class="btn-primary">Browse Events</a>
+                    </div>
+                `;
+                updateOrderSummary();
+                return;
+            }
+            
+            cartItemsContainer.innerHTML = cart.map(item => `
+                <div class="cart-item" data-event-id="${item.eventId}">
+                    <img src="${item.image}" alt="${item.title}">
+                    <div class="cart-item-details">
+                        <h4>${item.title}</h4>
+                        <p class="cart-item-venue">${item.venue}, ${item.city}</p>
+                        <p class="cart-item-date">${formatDate(item.date)} at ${item.time}</p>
+                        <p class="cart-item-price">${item.price} SAR per ticket</p>
+                    </div>
+                    <div class="cart-item-actions">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="updateCartQuantity('${item.eventId}', ${item.quantity - 1})">-</button>
+                            <span class="quantity-value">${item.quantity}</span>
+                            <button class="quantity-btn" onclick="updateCartQuantity('${item.eventId}', ${item.quantity + 1})">+</button>
+                        </div>
+                        <p class="cart-item-total">${(item.price * item.quantity).toFixed(2)} SAR</p>
+                        <button class="remove-btn" onclick="removeFromCart('${item.eventId}')">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            updateOrderSummary();
+        }
+        
+        function updateCartQuantity(eventId, newQuantity){
+            if (newQuantity < 1){
+                removeFromCart(eventId);
+                return;
+            }
+            Cart.updateQuantity(eventId, newQuantity);
+            renderCart();
+        }
+        
+        function removeFromCart(eventId){
+            if (confirm('Remove this item from cart?')){
+                Cart.removeItem(eventId);
+                renderCart();
+            }
+        }
+        
+        function updateOrderSummary(){
+            const subtotal = Cart.getTotal();
+            let discount = 0;
+            
+            if (appliedPromo){
+                if (appliedPromo.type === 'percentage'){
+                    discount = subtotal * (appliedPromo.value / 100);
+                } else if (appliedPromo.type === 'fixed'){
+                    discount = Math.min(appliedPromo.value, subtotal);
+                }
+            }
+            
+            const total = Math.max(0, subtotal - discount);
+            
+            document.getElementById('subtotal-amount').textContent = subtotal.toFixed(2) + ' SAR';
+            document.getElementById('total-amount').textContent = total.toFixed(2) + ' SAR';
+            
+            const discountRow = document.getElementById('discount-row');
+            if (discount > 0){
+                discountRow.style.display = 'flex';
+                document.getElementById('discount-amount').textContent = '-' + discount.toFixed(2) + ' SAR';
+            } else {
+                discountRow.style.display = 'none';
+            }
+        }
+        
+        function formatDate(dateStr){
+            if (!dateStr) return 'TBA';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        // Apply promo code
+        document.getElementById('apply-promo').addEventListener('click', function(){
+            const promoInput = document.getElementById('promo-code');
+            const promoCode = promoInput.value.trim().toUpperCase();
+            const promoMessage = document.getElementById('promo-message');
+            
+            if (!promoCode){
+                promoMessage.textContent = 'Please enter a promo code';
+                promoMessage.className = 'promo-message error';
+                return;
+            }
+            
+            if (promoCodes[promoCode]){
+                appliedPromo = promoCodes[promoCode];
+                promoMessage.textContent = '✓ ' + appliedPromo.description;
+                promoMessage.className = 'promo-message success';
+                updateOrderSummary();
+            } else {
+                promoMessage.textContent = 'Invalid promo code';
+                promoMessage.className = 'promo-message error';
+                appliedPromo = null;
+                updateOrderSummary();
+            }
+        });
+        
+        // Proceed to checkout
+        document.getElementById('proceed-checkout').addEventListener('click', function(){
+            const cart = Cart.getCart();
+            
+            if (cart.length === 0){
+                window.modalInstance.alert('Cart Empty', 'Please add items to your cart before proceeding.');
+                return;
+            }
+            
+            if (!Auth.isLoggedIn()){
+                window.modalInstance.confirm(
+                    'Sign In Required',
+                    'You need to sign in to complete your booking.',
+                    () => { window.location.href = 'signin.html?redirect=checkout.html'; }
+                );
+                return;
+            }
+            
+            // For now, show a message about multi-event booking
+            window.modalInstance.alert(
+                'Coming Soon',
+                'Multi-event checkout is coming soon! For now, please book events individually from the event page.'
+            );
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function(){
+            renderCart();
+        });
+    </script>
+</body>
+</html>
