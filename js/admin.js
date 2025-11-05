@@ -10,6 +10,7 @@ function initAdminDashboard() {
   initTabSwitching();
   initFilterButtons();
   initSettingsActions();
+  initAdminSearch();
 }
 
 // Load Statistics
@@ -137,17 +138,43 @@ function viewBooking(bookingId) {
 }
 
 // Delete Booking
-function deleteBooking(bookingId) {
+async function deleteBooking(bookingId) {
   window.modalInstance.confirm(
     'Delete Booking',
     'Are you sure you want to delete this booking? This action cannot be undone.',
-    () => {
-      if (DB.deleteBooking(bookingId)) {
+    async () => {
+      try {
+        // Delete on server
+        const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await safeJson(response);
+        
+        if (!response.ok || !data || !data.ok) {
+          throw new Error(data?.error || 'Failed to delete booking');
+        }
+        
+        // Delete locally
+        DB.deleteBooking(bookingId);
+        
         window.modalInstance.success('Booking Deleted', 'The booking has been deleted successfully!', () => {
           loadStatistics();
           loadBookingsTable();
           loadAnalytics();
         });
+      } catch (error) {
+        console.error('Delete booking error:', error);
+        // Still delete locally if server fails
+        if (DB.deleteBooking(bookingId)) {
+          window.modalInstance.success('Booking Deleted', 'Booking deleted locally. Server sync may be pending.', () => {
+            loadStatistics();
+            loadBookingsTable();
+            loadAnalytics();
+          });
+        } else {
+          window.modalInstance.error('Delete Failed', 'Failed to delete booking. Please try again.');
+        }
       }
     }
   );
@@ -218,20 +245,90 @@ function deleteEvent(eventId) {
   );
 }
 
+// View Event
+function viewEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (!event) {
+    window.modalInstance.error('Event Not Found', 'The selected event could not be found.');
+    return;
+  }
+  
+  const details = `
+    <div style="text-align: left;">
+      <p><strong>Title:</strong> ${event.title}</p>
+      <p><strong>Category:</strong> ${event.category}</p>
+      <p><strong>City:</strong> ${event.city}</p>
+      <p><strong>Venue:</strong> ${event.venue}</p>
+      <p><strong>Date:</strong> ${formatDate(event.date)}</p>
+      <p><strong>Time:</strong> ${event.time}</p>
+      <p><strong>Price:</strong> ${event.price} SAR</p>
+      <p><strong>Description:</strong> ${event.description || 'N/A'}</p>
+    </div>
+  `;
+  window.modalInstance.alert('Event Details', details);
+}
+
+// Edit Event
+function editEvent(eventId) {
+  const event = DB.getEventById(eventId);
+  if (!event) {
+    window.modalInstance.error('Event Not Found', 'The selected event could not be found.');
+    return;
+  }
+  
+  window.modalInstance.showForm({
+    title: 'Edit Event',
+    fields: [
+      { name: 'title', label: 'Event Title', type: 'text', value: event.title, required: true, icon: '🎫', placeholder: 'Enter event title' },
+      { name: 'category', label: 'Category', type: 'select', value: event.category, options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals'], required: true, icon: '🎭' },
+      { name: 'city', label: 'City', type: 'select', value: event.city, options: ['Riyadh', 'Jeddah', 'Dammam'], required: true, icon: '🏙' },
+      { name: 'venue', label: 'Venue', type: 'text', value: event.venue, required: true, icon: '📍', placeholder: 'Enter venue name' },
+      { name: 'date', label: 'Date', type: 'date', value: event.date, required: true, icon: '📅' },
+      { name: 'time', label: 'Time', type: 'time', value: event.time, required: true, icon: '🕐' },
+      { name: 'price', label: 'Price (SAR)', type: 'number', value: event.price, required: true, icon: '💰', placeholder: '0' },
+      { name: 'image', label: 'Image URL', type: 'url', value: event.image, icon: '🖼', placeholder: 'https://...' },
+      { name: 'description', label: 'Description', type: 'textarea', value: event.description || '', icon: 'ℹ', placeholder: 'Enter event description' }
+    ],
+    submitText: 'Update Event',
+    onSubmit: (data) => {
+      const updated = DB.updateEvent(eventId, {
+        title: data.title,
+        category: data.category,
+        city: data.city,
+        venue: data.venue,
+        date: data.date,
+        time: data.time,
+        price: parseFloat(data.price),
+        image: data.image,
+        description: data.description
+      });
+
+      if (updated) {
+        window.modalInstance.success('Event Updated', 'The event has been updated successfully!', () => {
+          loadEventsGrid();
+          loadStatistics();
+        });
+      } else {
+        window.modalInstance.error('Update Failed', 'Unable to update the event.');
+      }
+    }
+  });
+}
+
 // Add New Event
 function addNewEvent() {
   window.modalInstance.showForm({
     title: 'Add New Event',
     fields: [
-      { name: 'title', label: 'Event Title', type: 'text', required: true, icon: 'T', placeholder: 'Enter event title' },
-      { name: 'category', label: 'Category', type: 'select', options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals'], required: true, icon: 'C' },
-      { name: 'city', label: 'City', type: 'select', options: ['Riyadh', 'Jeddah', 'Dammam'], required: true, icon: 'City' },
-      { name: 'venue', label: 'Venue', type: 'text', required: true, icon: 'V', placeholder: 'Enter venue name' },
-      { name: 'date', label: 'Date', type: 'date', required: true, icon: 'D' },
-      { name: 'time', label: 'Time', type: 'time', required: true, icon: 'T' },
-      { name: 'price', label: 'Price (SAR)', type: 'number', required: true, icon: 'P', placeholder: '0' },
-      { name: 'image', label: 'Image URL', type: 'url', value: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop', icon: 'Img' },
-      { name: 'description', label: 'Description', type: 'textarea', icon: 'Info', placeholder: 'Enter event description' }
+      { name: 'title', label: 'Event Title', type: 'text', required: true, icon: '🎫', placeholder: 'Enter event title' },
+      { name: 'category', label: 'Category', type: 'select', options: ['Movies', 'Sports', 'Concerts', 'Theatre', 'Festivals'], required: true, icon: '🎭' },
+      { name: 'city', label: 'City', type: 'select', options: ['Riyadh', 'Jeddah', 'Dammam'], required: true, icon: '🏙' },
+      { name: 'venue', label: 'Venue', type: 'text', required: true, icon: '📍', placeholder: 'Enter venue name' },
+      { name: 'date', label: 'Date', type: 'date', required: true, icon: '📅' },
+      { name: 'time', label: 'Time', type: 'time', required: true, icon: '🕐' },
+      { name: 'price', label: 'Price (SAR)', type: 'number', required: true, icon: '💰', placeholder: '0' },
+      { name: 'image', label: 'Image URL', type: 'url', value: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop', icon: '🖼' },
+      { name: 'description', label: 'Description', type: 'textarea', icon: 'ℹ', placeholder: 'Enter event description' }
     ],
     submitText: 'Add Event',
     onSubmit: (data) => {
@@ -504,6 +601,175 @@ function initSettingsActions() {
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-US', options);
+}
+
+// Admin Search Functionality
+function initAdminSearch() {
+  const searchInput = document.getElementById('admin-search');
+  if (!searchInput) return;
+
+  let searchTimeout;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      performAdminSearch(e.target.value.trim().toLowerCase());
+    }, 300);
+  });
+}
+
+function performAdminSearch(query) {
+  if (!query) {
+    // Reset to show all data
+    loadBookingsTable();
+    loadEventsGrid();
+    loadUsersTable();
+    return;
+  }
+
+  // Get active tab
+  const activeTab = document.querySelector('.tab-btn.active');
+  const activeTabName = activeTab ? activeTab.dataset.tab : 'bookings';
+
+  if (activeTabName === 'bookings') {
+    searchBookings(query);
+  } else if (activeTabName === 'events') {
+    searchEvents(query);
+  } else if (activeTabName === 'users') {
+    searchUsers(query);
+  }
+}
+
+function searchBookings(query) {
+  const bookings = DB.getAllBookings();
+  const filtered = bookings.filter(b => 
+    String(b.id).toLowerCase().includes(query) ||
+    (b.userName || '').toLowerCase().includes(query) ||
+    (b.userEmail || '').toLowerCase().includes(query) ||
+    (b.eventTitle || '').toLowerCase().includes(query) ||
+    (b.status || '').toLowerCase().includes(query)
+  );
+
+  const tbody = document.getElementById('bookings-table-body');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h3>No results found</h3>
+          <p>No bookings match your search query.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(booking => {
+    const row = document.createElement('tr');
+    const statusClass = `status-${booking.status}`;
+    
+    row.innerHTML = `
+      <td><strong>${booking.id}</strong></td>
+      <td>
+        <div>${booking.userName}</div>
+        <small style="color: var(--text-light);">${booking.userEmail}</small>
+      </td>
+      <td>${booking.eventTitle}</td>
+      <td>${formatDate(booking.date)}</td>
+      <td>${booking.quantity} x ${booking.ticketType}</td>
+      <td><strong>${booking.totalPrice} SAR</strong></td>
+      <td><span class="status-badge ${statusClass}">${booking.status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="action-btn view" onclick="viewBooking('${booking.id}')">View</button>
+          <button class="action-btn delete" onclick="deleteBooking('${booking.id}')">Delete</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function searchEvents(query) {
+  const events = DB.getAllEvents();
+  const filtered = events.filter(e => 
+    (e.title || '').toLowerCase().includes(query) ||
+    (e.category || '').toLowerCase().includes(query) ||
+    (e.city || '').toLowerCase().includes(query) ||
+    (e.venue || '').toLowerCase().includes(query)
+  );
+
+  const grid = document.getElementById('admin-events-grid');
+  if (!grid) return;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-icon">🔍</div>
+        <h3>No results found</h3>
+        <p>No events match your search query.</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(event => `
+    <div class="event-card">
+      <img src="${event.image}" alt="${event.title}">
+      <div class="event-card-content">
+        <span class="event-category">${event.category}</span>
+        <h3>${event.title}</h3>
+        <p class="event-location">${event.venue}, ${event.city}</p>
+        <p class="event-date">${formatDate(event.date)} • ${event.time}</p>
+        <p class="event-price">${event.price} SAR</p>
+        <div class="event-actions">
+          <button class="action-btn view" onclick="viewEvent('${event.id}')">View</button>
+          <button class="action-btn edit" onclick="editEvent('${event.id}')">Edit</button>
+          <button class="action-btn delete" onclick="deleteEvent('${event.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function searchUsers(query) {
+  const users = DB.getAllUsers();
+  const filtered = users.filter(u => 
+    (u.name || '').toLowerCase().includes(query) ||
+    (u.email || '').toLowerCase().includes(query) ||
+    (u.role || '').toLowerCase().includes(query)
+  );
+
+  const tbody = document.getElementById('users-table-body');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h3>No results found</h3>
+          <p>No users match your search query.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(user => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${user.id}</strong></td>
+      <td>${user.name}</td>
+      <td>${user.email}</td>
+      <td><span class="role-badge role-${user.role}">${user.role}</span></td>
+      <td>${formatDate(user.createdAt || new Date().toISOString())}</td>
+    `;
+    tbody.appendChild(row);
+  });
 }
 
 // Initialize when page loads

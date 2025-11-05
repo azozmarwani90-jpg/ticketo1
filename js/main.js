@@ -427,9 +427,122 @@ class AuthSystem {
   isLoggedIn(){ return this.currentUser !== null; }
   isAdmin(){ return this.currentUser && this.currentUser.role === 'admin'; }
   hash(pw){ let h=0; for (let i=0;i<pw.length;i++){ const c=pw.charCodeAt(i); h=((h<<5)-h)+c; h=h&h; } return h.toString(); }
-  updateProfile(up){ if (!this.currentUser) return false; const db=DB.getDatabase(); const i=db.users.findIndex(u=>u.id===this.currentUser.id); if (i!==-1){ db.users[i]={...db.users[i], ...up}; DB.saveDatabase(db); this.setCurrentUser(db.users[i]); return true;} return false; }
+  updateProfile(up){
+    if (!this.currentUser) return false;
+    const db = DB.getDatabase();
+    const i = db.users.findIndex(u => u.id === this.currentUser.id);
+    if (i !== -1){
+      db.users[i] = {...db.users[i], ...up};
+      DB.saveDatabase(db);
+      this.setCurrentUser(db.users[i]);
+      return true;
+    }
+    return false;
+  }
 }
 const Auth = new AuthSystem();
+
+// --- Cart System ------------------------------------------------------------
+class CartSystem {
+  constructor(){
+    this.storageKey = 'ticketo_cart';
+    this.cart = this.loadCart();
+    this.updateBadge();
+  }
+
+  loadCart(){
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error('Error loading cart:', e);
+      return [];
+    }
+  }
+
+  saveCart(){
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.cart));
+      this.updateBadge();
+    } catch (e) {
+      console.error('Error saving cart:', e);
+    }
+  }
+
+  addItem(event, quantity = 1){
+    if (!event || !event.id) return false;
+    
+    const existingIndex = this.cart.findIndex(item => String(item.eventId) === String(event.id));
+    
+    if (existingIndex !== -1){
+      this.cart[existingIndex].quantity += quantity;
+    } else {
+      this.cart.push({
+        eventId: event.id,
+        title: event.title,
+        venue: event.venue,
+        city: event.city,
+        date: event.date,
+        time: event.time,
+        price: Number(event.price) || 0,
+        image: event.image || 'images/placeholder.jpg',
+        quantity: quantity,
+        addedAt: new Date().toISOString()
+      });
+    }
+    
+    this.saveCart();
+    return true;
+  }
+
+  removeItem(eventId){
+    const index = this.cart.findIndex(item => String(item.eventId) === String(eventId));
+    if (index !== -1){
+      this.cart.splice(index, 1);
+      this.saveCart();
+      return true;
+    }
+    return false;
+  }
+
+  updateQuantity(eventId, quantity){
+    const item = this.cart.find(item => String(item.eventId) === String(eventId));
+    if (item){
+      item.quantity = Math.max(1, quantity);
+      this.saveCart();
+      return true;
+    }
+    return false;
+  }
+
+  getCart(){
+    return this.cart.slice();
+  }
+
+  getItemCount(){
+    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  getTotal(){
+    return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+
+  clear(){
+    this.cart = [];
+    this.saveCart();
+  }
+
+  updateBadge(){
+    const badge = document.getElementById('cart-badge');
+    const count = this.getItemCount();
+    if (badge){
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  }
+}
+const Cart = new CartSystem();
+
 
 // --- Nav auth state ---------------------------------------------------------
 let revealObserver;
@@ -454,10 +567,29 @@ function updateNavigation(){
       const dd  = document.getElementById('user-dropdown');
       const so  = document.getElementById('signout-btn');
       if (wrap && btn && dd){
-        const outside = (e)=>{ if (!wrap.contains(e.target)){ wrap.classList.remove('open'); document.removeEventListener('click', outside); } };
-        btn.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); const open=wrap.classList.toggle('open'); if (open) document.addEventListener('click', outside); else document.removeEventListener('click', outside); });
+        const outside = (e)=>{
+          if (!wrap.contains(e.target)){
+            wrap.classList.remove('open');
+            document.removeEventListener('click', outside);
+          }
+        };
+        btn.addEventListener('click',(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          const open = wrap.classList.toggle('open');
+          if (open) document.addEventListener('click', outside);
+          else document.removeEventListener('click', outside);
+        });
       }
-      if (so){ so.addEventListener('click',(e)=>{ e.preventDefault(); window.modalInstance.confirm('Sign Out','Are you sure you want to sign out?', ()=>{ wrap && wrap.classList.remove('open'); Auth.signout(); }); }); }
+      if (so){
+        so.addEventListener('click',(e)=>{
+          e.preventDefault();
+          window.modalInstance.confirm('Sign Out','Are you sure you want to sign out?', ()=>{
+            wrap && wrap.classList.remove('open');
+            Auth.signout();
+          });
+        });
+      }
     },100);
   } else {
     const inLi=document.createElement('li'); inLi.className='auth-link'; inLi.innerHTML='<a href="signin.html">Sign In</a>';
@@ -853,14 +985,43 @@ function loadUserBookings(status='all'){
     container.appendChild(wrap);
   });
 }
-function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+async function cancelBooking(id){
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      // Update on server
+      const response = await fetch(`${API_BASE}/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      
+      const data = await safeJson(response);
+      
+      if (!response.ok || !data || !data.ok) {
+        throw new Error(data?.error || 'Failed to cancel booking');
+      }
+      
+      // Update local database
+      DB.updateBookingStatus(id, 'cancelled');
+      cachedBookings = DB.getAllBookings();
+      
+      // Show success without blur overlay
+      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
+        loadUserStats();
+        loadUserBookings();
+      });
+    } catch (error) {
+      console.error('Cancel booking error:', error);
+      // Still update locally if server fails
+      if (DB.updateBookingStatus(id, 'cancelled')){
+        cachedBookings = DB.getAllBookings();
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled locally. Server sync may be pending.', ()=>{
+          loadUserStats();
+          loadUserBookings();
+        });
+      } else {
+        window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      }
     }
   });
 }
@@ -919,11 +1080,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'👤'},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'✉'},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'📱'},
+      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'🎂'},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'⚥'}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{

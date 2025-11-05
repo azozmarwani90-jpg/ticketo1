@@ -97,7 +97,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
+    origin: ['http://127.0.0.1:5500', 'http://localhost:5500', 'http://127.0.0.1:8080', 'http://localhost:8080'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
@@ -260,6 +260,61 @@ app.post('/api/bookings', (req, res) => {
     console.error('Failed to create booking:', error);
     res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ ok: false, error: 'Failed to create booking' });
+  }
+});
+
+// Update booking status (e.g., cancel booking)
+app.patch('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+
+    if (!status) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Status is required' });
+    }
+
+    const db = readDB();
+    const booking = db.bookings.find((b) => String(b.id) === String(id));
+
+    if (!booking) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    booking.status = status;
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, booking });
+  } catch (error) {
+    console.error('Failed to update booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update booking' });
+  }
+});
+
+// Delete booking (admin only)
+app.delete('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const index = db.bookings.findIndex((b) => String(b.id) === String(id));
+
+    if (index === -1) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    db.bookings.splice(index, 1);
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete booking' });
   }
 });
 
