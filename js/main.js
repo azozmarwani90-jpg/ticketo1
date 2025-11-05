@@ -438,15 +438,28 @@ function updateNavigation(){
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
-    const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
     const initials=(Auth.currentUser.name||'U').split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).join('').slice(0,2)||'U';
+    const isAdmin = Auth.isAdmin();
+    
+    // For regular users: Profile + View my bookings + Sign Out
+    // For admin (on user site): should not show admin dashboard link
+    let dropdownHTML = '';
+    if (isAdmin && window.location.pathname.includes('admin/')) {
+      // Admin on admin site - show only Profile and Sign Out (no Home link)
+      dropdownHTML = `
+        <a href="index.html" class="nav-user-link">Profile</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    } else {
+      // Regular user on user site - show Profile, View my bookings, Sign Out (no Admin/Home)
+      dropdownHTML = `
+        <a href="profile.html" class="nav-user-link">Profile</a>
+        <a href="profile.html" class="nav-user-link">View my bookings</a>
+        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>`;
+    }
+    
     li.innerHTML = `<div class="nav-user-menu">
       <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
-      <div id="user-dropdown" class="nav-user-dropdown">
-        <a href="${homeLink}" class="nav-user-link">Home</a>
-        <a href="${dashLink}" class="nav-user-link">${dashLabel}</a>
-        <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
-      </div></div>`;
+      <div id="user-dropdown" class="nav-user-dropdown">${dropdownHTML}</div></div>`;
     navLinks.insertBefore(li, navLinks.lastElementChild);
     setTimeout(()=>{
       const wrap = document.querySelector('.nav-user-menu');
