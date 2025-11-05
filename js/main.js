@@ -542,6 +542,17 @@ let revealObserver;
 function updateNavigation(){
   const navLinks = document.querySelector('.nav-links'); if (!navLinks) return;
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
+  
+  // Add cart badge if not exists
+  if (!document.querySelector('.cart-link')) {
+    const cartLi = document.createElement('li');
+    cartLi.innerHTML = `<a href="checkout.html" class="cart-link">
+      <span class="material-symbols-rounded">shopping_cart</span>
+      <span id="cart-badge" class="cart-badge">0</span>
+    </a>`;
+    navLinks.insertBefore(cartLi, navLinks.lastElementChild);
+  }
+  
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
     const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
@@ -570,6 +581,11 @@ function updateNavigation(){
     const upLi=document.createElement('li'); upLi.className='auth-link'; upLi.innerHTML='<a href="signup.html" class="btn-primary" style="padding:0.6rem 1.5rem;font-size:0.9rem;">Sign Up</a>';
     navLinks.insertBefore(inLi, navLinks.lastElementChild);
     navLinks.insertBefore(upLi, navLinks.lastElementChild);
+  }
+  
+  // Update cart badge after navigation is updated
+  if (typeof Cart !== 'undefined') {
+    Cart.updateCartUI();
   }
 }
 document.addEventListener('DOMContentLoaded', updateNavigation);
@@ -730,7 +746,26 @@ async function initEventDetail(){
   document.getElementById('increase-qty').addEventListener('click', ()=>{ if (qty<10){ qty++; document.getElementById('quantity').textContent=qty; update(); } });
   function update(){ const total=selected.price*qty; document.getElementById('total-price').textContent = total.toLocaleString()+' SAR'; }
   update();
-  const btn=document.getElementById('book-btn'); btn && btn.addEventListener('click', ()=>{ localStorage.setItem('selectedEventId', String(ev.id)); localStorage.removeItem('last_booking'); window.location.href='booking.html'; });
+  
+  // Book Now button
+  const btn=document.getElementById('book-btn'); 
+  btn && btn.addEventListener('click', ()=>{ 
+    localStorage.setItem('selectedEventId', String(ev.id)); 
+    localStorage.removeItem('last_booking'); 
+    window.location.href='booking.html'; 
+  });
+  
+  // Add to Cart button
+  const cartBtn=document.getElementById('add-to-cart-btn');
+  cartBtn && cartBtn.addEventListener('click', ()=>{
+    if (Cart.addItem(ev, qty, selected.type)) {
+      window.modalInstance.success('Added to Cart', `${qty} x ${selected.type} ticket(s) added to cart!`, ()=>{
+        // Optionally redirect to checkout or stay on page
+      });
+    } else {
+      window.modalInstance.error('Error', 'Failed to add to cart. Please try again.');
+    }
+  });
 }
 
 // Initialize Leaflet map for event detail page
