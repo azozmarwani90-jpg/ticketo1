@@ -227,13 +227,13 @@ async function fetchBookingsFromApi() {
   }
 }
 
-async function createBookingOnServer({ name, email, eventId, tickets }) {
+async function createBookingOnServer({ name, email, eventId, tickets, promoCode }) {
   let response;
   try {
     response = await fetch(`${API_BASE}/api/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, eventId, tickets })
+      body: JSON.stringify({ name, email, eventId, tickets, promoCode })
     });
   } catch {
     throw new Error('Network unreachable');

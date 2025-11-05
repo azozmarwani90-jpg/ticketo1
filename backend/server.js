@@ -263,7 +263,7 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
-// Update booking (for cancellation)
+// Update booking status
 app.put('/api/bookings/:id', (req, res) => {
   try {
     const bookingId = req.params.id;
