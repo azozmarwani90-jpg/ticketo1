@@ -4,6 +4,45 @@
 const API_HOST = window.location.hostname || '127.0.0.1';
 const API_BASE = `http://${API_HOST}:4000`;
 
+// Real-time sync - poll for updates every 10 seconds
+let syncInterval = null;
+
+function startRealtimeSync() {
+  if (syncInterval) return; // Already running
+  
+  syncInterval = setInterval(async () => {
+    try {
+      // Fetch latest bookings from server
+      const response = await fetch(`${API_BASE}/api/bookings`);
+      if (response.ok) {
+        const bookings = await response.json();
+        const db = DB.getDatabase();
+        const oldCount = db.bookings.length;
+        
+        // Update local database
+        DB.setBookings(bookings);
+        
+        // Refresh UI if bookings changed
+        const newCount = bookings.length;
+        if (newCount !== oldCount) {
+          loadStatistics();
+          loadBookingsTable();
+          loadAnalytics();
+        }
+      }
+    } catch (error) {
+      console.error('Sync failed:', error);
+    }
+  }, 10000); // Poll every 10 seconds
+}
+
+function stopRealtimeSync() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+}
+
 // Initialize Admin Dashboard
 function initAdminDashboard() {
   loadStatistics();
@@ -15,6 +54,16 @@ function initAdminDashboard() {
   initFilterButtons();
   initSettingsActions();
   initAdminSearch();
+  startRealtimeSync();
+  
+  // Stop sync when page is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopRealtimeSync();
+    } else {
+      startRealtimeSync();
+    }
+  });
 }
 
 // Load Statistics

@@ -967,7 +967,30 @@ function initConfirmationPage(){
 }
 
 // Profile page
-async function initProfilePage(){ await fetchBookingsFromApi(); loadUserStats(); loadUserBookings(); initUserFilters(); }
+async function initProfilePage(){ 
+  await fetchBookingsFromApi(); 
+  loadUserStats(); 
+  loadUserBookings(); 
+  initUserFilters();
+  
+  // Start real-time sync for profile page
+  const profileSyncInterval = setInterval(async () => {
+    try {
+      const updated = await fetchBookingsFromApi();
+      if (updated) {
+        loadUserStats();
+        loadUserBookings();
+      }
+    } catch (error) {
+      console.error('Profile sync failed:', error);
+    }
+  }, 10000);
+  
+  // Clean up interval when leaving page
+  window.addEventListener('beforeunload', () => {
+    clearInterval(profileSyncInterval);
+  });
+}
 function loadUserStats(){
   const all = cachedBookings || DB.getAllBookings(); let mine = all;
   if (Auth.isLoggedIn() && !Auth.isAdmin()) mine = all.filter(b=>b.userEmail===Auth.currentUser.email);
