@@ -431,6 +431,200 @@ class AuthSystem {
 }
 const Auth = new AuthSystem();
 
+// --- Cart System ------------------------------------------------------------
+class CartSystem {
+  constructor() {
+    this.loadCart();
+  }
+  
+  loadCart() {
+    try {
+      const stored = localStorage.getItem('cart');
+      this.items = stored ? JSON.parse(stored) : [];
+    } catch {
+      this.items = [];
+    }
+  }
+  
+  saveCart() {
+    try {
+      localStorage.setItem('cart', JSON.stringify(this.items));
+      this.updateCartUI();
+    } catch (e) {
+      console.error('Failed to save cart:', e);
+    }
+  }
+  
+  addItem(eventId, ticketType, qty) {
+    const quantity = Math.max(1, Math.min(10, parseInt(qty, 10) || 1));
+    
+    // Check for duplicate (same eventId + ticketType)
+    const existingIndex = this.items.findIndex(
+      item => String(item.eventId) === String(eventId) && item.ticketType === ticketType
+    );
+    
+    if (existingIndex !== -1) {
+      // Duplicate found - show warning
+      if (window.modalInstance) {
+        window.modalInstance.error(
+          'Duplicate Item',
+          `This ticket type for this event is already in your cart. Please update the quantity if needed.`,
+          () => this.openCart()
+        );
+      }
+      return false;
+    }
+    
+    // Add new item
+    this.items.push({
+      eventId: String(eventId),
+      ticketType,
+      qty: quantity
+    });
+    
+    this.saveCart();
+    
+    if (window.modalInstance) {
+      window.modalInstance.success('Added to Cart', 'Item added to cart successfully!');
+    }
+    
+    return true;
+  }
+  
+  removeItem(index) {
+    if (index >= 0 && index < this.items.length) {
+      this.items.splice(index, 1);
+      this.saveCart();
+    }
+  }
+  
+  clearCart() {
+    this.items = [];
+    this.saveCart();
+  }
+  
+  getItemCount() {
+    return this.items.reduce((sum, item) => sum + item.qty, 0);
+  }
+  
+  async getCartWithDetails() {
+    const events = cachedEvents || await fetchEventsFromApi() || DB.getAllEvents();
+    
+    return this.items.map(item => {
+      const event = events.find(e => String(e.id) === String(item.eventId));
+      if (!event) return null;
+      
+      const basePrice = Number(event.price) || 0;
+      let multiplier = 1;
+      if (item.ticketType === 'VIP') multiplier = 2;
+      if (item.ticketType === 'VVIP') multiplier = 3;
+      const price = basePrice * multiplier;
+      
+      return {
+        ...item,
+        event,
+        price,
+        total: price * item.qty
+      };
+    }).filter(Boolean);
+  }
+  
+  updateCartUI() {
+    const badge = document.getElementById('cart-badge');
+    const count = this.getItemCount();
+    
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+  
+  async renderCart() {
+    const container = document.getElementById('cart-items-container');
+    const totalEl = document.getElementById('cart-total-amount');
+    
+    if (!container) return;
+    
+    const itemsWithDetails = await this.getCartWithDetails();
+    
+    if (itemsWithDetails.length === 0) {
+      container.innerHTML = `
+        <div class="cart-empty">
+          <div class="cart-empty-icon material-symbols-rounded">shopping_cart</div>
+          <p>Your cart is empty</p>
+          <p style="font-size: 0.9rem;">Browse events and add tickets to get started!</p>
+        </div>
+      `;
+      if (totalEl) totalEl.textContent = '0 SAR';
+      return;
+    }
+    
+    container.innerHTML = '';
+    let grandTotal = 0;
+    
+    itemsWithDetails.forEach((item, index) => {
+      grandTotal += item.total;
+      
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        <img src="${item.event.image}" alt="${item.event.title}" class="cart-item-image">
+        <div class="cart-item-details">
+          <div class="cart-item-title">${item.event.title}</div>
+          <div class="cart-item-type">${item.ticketType} - ${item.price} SAR each</div>
+          <div class="cart-item-qty">
+            Quantity: ${item.qty} | Total: ${item.total} SAR
+          </div>
+          <button class="cart-item-remove" onclick="Cart.removeItem(${index}); Cart.renderCart();">Remove</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+    
+    if (totalEl) {
+      totalEl.textContent = grandTotal.toLocaleString() + ' SAR';
+    }
+  }
+  
+  openCart() {
+    const panel = document.getElementById('cart-panel');
+    if (panel) {
+      panel.classList.add('open');
+      this.renderCart();
+    }
+  }
+  
+  closeCart() {
+    const panel = document.getElementById('cart-panel');
+    if (panel) {
+      panel.classList.remove('open');
+    }
+  }
+  
+  async checkout() {
+    const itemsWithDetails = await this.getCartWithDetails();
+    
+    if (itemsWithDetails.length === 0) {
+      window.modalInstance.error('Empty Cart', 'Your cart is empty. Please add items before checkout.');
+      return;
+    }
+    
+    // For now, redirect to booking page with first item
+    // In full implementation, this would handle multiple bookings
+    const firstItem = itemsWithDetails[0];
+    localStorage.setItem('selectedEventId', String(firstItem.eventId));
+    localStorage.setItem('selectedTicketType', firstItem.ticketType);
+    localStorage.setItem('selectedQuantity', String(firstItem.qty));
+    window.location.href = 'booking.html';
+  }
+}
+
+const Cart = new CartSystem();
+
 // --- Nav auth state ---------------------------------------------------------
 let revealObserver;
 function updateNavigation(){
@@ -851,13 +1045,49 @@ function loadUserBookings(status='all'){
   });
 }
 function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      // Try to update on backend first
+      const response = await fetch(`${API_BASE}/api/bookings/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      
+      if (response.ok) {
+        const data = await safeJson(response);
+        if (data && data.ok) {
+          // Update local DB
+          DB.updateBookingStatus(id, 'cancelled');
+          cachedBookings = null;
+          await fetchBookingsFromApi(); // Refresh from server
+          window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
+            loadUserStats(); loadUserBookings();
+          });
+          return;
+        }
+      }
+      
+      // Fallback to local update if backend fails
+      if (DB.updateBookingStatus(id, 'cancelled')){
+        cachedBookings = DB.getAllBookings();
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully (local only).', ()=>{
+          loadUserStats(); loadUserBookings();
+        });
+      } else {
+        window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      // Fallback to local update
+      if (DB.updateBookingStatus(id, 'cancelled')){
+        cachedBookings = DB.getAllBookings();
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully (local only).', ()=>{
+          loadUserStats(); loadUserBookings();
+        });
+      } else {
+        window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      }
     }
   });
 }
