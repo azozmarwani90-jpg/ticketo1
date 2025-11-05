@@ -263,6 +263,61 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
+// Update booking status (e.g., cancel booking)
+app.patch('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+
+    if (!status) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ ok: false, error: 'Status is required' });
+    }
+
+    const db = readDB();
+    const booking = db.bookings.find((b) => String(b.id) === String(id));
+
+    if (!booking) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    booking.status = status;
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, booking });
+  } catch (error) {
+    console.error('Failed to update booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to update booking' });
+  }
+});
+
+// Delete booking (admin only)
+app.delete('/api/bookings/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const index = db.bookings.findIndex((b) => String(b.id) === String(id));
+
+    if (index === -1) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(404).json({ ok: false, error: 'Booking not found' });
+    }
+
+    db.bookings.splice(index, 1);
+    writeDB(db);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json({ ok: true, message: 'Booking deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete booking:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ ok: false, error: 'Failed to delete booking' });
+  }
+});
+
 // Optional static hosting (uncomment when needed)
 // const FRONTEND_DIR = path.resolve(__dirname, '..');
 // app.use(express.static(FRONTEND_DIR));

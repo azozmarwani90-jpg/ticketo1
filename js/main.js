@@ -985,14 +985,43 @@ function loadUserBookings(status='all'){
     container.appendChild(wrap);
   });
 }
-function cancelBooking(id){
-  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', ()=>{
-    if (DB.updateBookingStatus(id, 'cancelled')){
-      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
-        cachedBookings = DB.getAllBookings(); loadUserStats(); loadUserBookings();
+async function cancelBooking(id){
+  window.modalInstance.confirm('Cancel Booking','Are you sure you want to cancel this booking? This action cannot be undone.', async ()=>{
+    try {
+      // Update on server
+      const response = await fetch(`${API_BASE}/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-    } else {
-      window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      
+      const data = await safeJson(response);
+      
+      if (!response.ok || !data || !data.ok) {
+        throw new Error(data?.error || 'Failed to cancel booking');
+      }
+      
+      // Update local database
+      DB.updateBookingStatus(id, 'cancelled');
+      cachedBookings = DB.getAllBookings();
+      
+      // Show success without blur overlay
+      window.modalInstance.success('Booking Cancelled','Your booking has been cancelled successfully.', ()=>{
+        loadUserStats();
+        loadUserBookings();
+      });
+    } catch (error) {
+      console.error('Cancel booking error:', error);
+      // Still update locally if server fails
+      if (DB.updateBookingStatus(id, 'cancelled')){
+        cachedBookings = DB.getAllBookings();
+        window.modalInstance.success('Booking Cancelled','Your booking has been cancelled locally. Server sync may be pending.', ()=>{
+          loadUserStats();
+          loadUserBookings();
+        });
+      } else {
+        window.modalInstance.error('Cancellation Failed','Failed to cancel booking. Please try again.');
+      }
     }
   });
 }
@@ -1051,11 +1080,11 @@ function editProfile(){
   window.modalInstance.showForm({
     title:'Edit Profile',
     fields:[
-      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'user'},
-      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'envelope'},
-      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'phone'},
-      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'calendar'},
-      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'venus-mars'}
+      {name:'name',label:'Full Name',type:'text',value:u.name||'',required:true,icon:'👤'},
+      {name:'email',label:'Email Address',type:'email',value:u.email||'',required:true,icon:'✉'},
+      {name:'phone',label:'Phone Number',type:'tel',value:u.phone||'',icon:'📱'},
+      {name:'age',label:'Age',type:'number',value:u.age||'',icon:'🎂'},
+      {name:'gender',label:'Gender',type:'select',value:u.gender||'Prefer not to say',options:['Male','Female','Other','Prefer not to say'],icon:'⚥'}
     ],
     submitText:'Save Changes',
     onSubmit:(data)=>{
