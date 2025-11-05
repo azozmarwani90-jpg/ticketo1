@@ -675,7 +675,15 @@ function initFilters(){
   const priceValue=document.getElementById('price-value');
   function run(){
     let filtered=[...(cachedEvents || DB.getAllEvents())];
-    if (searchInput && searchInput.value){ const q=searchInput.value.toLowerCase(); filtered = filtered.filter(e=> e.title.toLowerCase().includes(q) || e.description.toLowerCase().includes(q)); }
+    if (searchInput && searchInput.value){ 
+      const q=searchInput.value.toLowerCase(); 
+      filtered = filtered.filter(e=> 
+        e.title.toLowerCase().includes(q) || 
+        e.description.toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q) ||
+        e.city.toLowerCase().includes(q)
+      ); 
+    }
     if (categoryFilter && categoryFilter.value!=='all') filtered = filtered.filter(e=> e.category === categoryFilter.value);
     if (cityFilter && cityFilter.value!=='all') filtered = filtered.filter(e=> e.city === cityFilter.value);
     if (priceRange){ const max=parseInt(priceRange.value,10); filtered = filtered.filter(e=> e.price <= max); }

@@ -70,10 +70,13 @@
         <div class="tab-content active" id="bookings-tab">
             <div class="content-header">
                 <h2>All Bookings</h2>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-status="all">All</button>
-                    <button class="filter-btn" data-status="confirmed">Confirmed</button>
-                    <button class="filter-btn" data-status="cancelled">Cancelled</button>
+                <div class="admin-search-wrapper">
+                    <input type="text" id="bookings-search" class="admin-search-input" placeholder="Search by ID, email, or event...">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-status="all">All</button>
+                        <button class="filter-btn" data-status="confirmed">Confirmed</button>
+                        <button class="filter-btn" data-status="cancelled">Cancelled</button>
+                    </div>
                 </div>
             </div>
             <div class="table-container">
@@ -98,7 +101,10 @@
         <div class="tab-content" id="events-tab">
             <div class="content-header">
                 <h2>Manage Events</h2>
-                <button class="btn-primary" id="add-event-btn">Add New Event</button>
+                <div class="admin-search-wrapper">
+                    <input type="text" id="events-search" class="admin-search-input" placeholder="Search by title, category, or city...">
+                    <button class="btn-primary" id="add-event-btn">Add New Event</button>
+                </div>
             </div>
             <div class="events-grid" id="admin-events-grid"></div>
         </div>
@@ -106,6 +112,7 @@
         <div class="tab-content" id="users-tab">
             <div class="content-header">
                 <h2>User Management</h2>
+                <input type="text" id="users-search" class="admin-search-input" placeholder="Search by name or email...">
             </div>
             <div class="table-container">
                 <table class="admin-table">
