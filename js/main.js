@@ -438,13 +438,12 @@ function updateNavigation(){
   navLinks.querySelectorAll('.auth-link').forEach(l=>l.remove());
   if (Auth.isLoggedIn()){
     const li = document.createElement('li'); li.className='auth-link';
-    const homeLink='index.html'; const dashLink=Auth.isAdmin()? 'admin/index.html' : 'profile.html'; const dashLabel=Auth.isAdmin()? 'Dashboard' : 'My Profile';
     const initials=(Auth.currentUser.name||'U').split(' ').filter(Boolean).map(p=>p[0].toUpperCase()).join('').slice(0,2)||'U';
+    // User site: only show Profile and Sign Out (never show Admin Dashboard on user site)
     li.innerHTML = `<div class="nav-user-menu">
       <button id="user-menu-btn" class="nav-user-btn"><span class="nav-user-avatar">${initials}</span><span class="nav-user-label">${Auth.currentUser.name}</span></button>
       <div id="user-dropdown" class="nav-user-dropdown">
-        <a href="${homeLink}" class="nav-user-link">Home</a>
-        <a href="${dashLink}" class="nav-user-link">${dashLabel}</a>
+        <a href="profile.html" class="nav-user-link">Profile</a>
         <button type="button" id="signout-btn" class="nav-user-link nav-user-signout">Sign Out</button>
       </div></div>`;
     navLinks.insertBefore(li, navLinks.lastElementChild);
