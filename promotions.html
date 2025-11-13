@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotions & Offers - Ticketo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Ticketo</a>
+            <div class="nav-search">
+                <input type="text" placeholder="Search for events, venues, or artists...">
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li class="auth-link"><a href="signin.html">Sign In</a></li>
+                <li class="auth-link"><a href="signup.html" class="nav-cta">Create Account</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+                        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                        <span class="theme-toggle-label">Light</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <section class="promotions-header" data-animate="fade">
+            <h1>Promotions & Offers</h1>
+            <p class="promotions-subtitle">Discover exclusive deals and save on your favorite events across Saudi Arabia</p>
+        </section>
+
+        <!-- Promotions Grid -->
+        <section class="promotions-grid" data-animate="up">
+            <!-- Flash Deals -->
+            <div class="promo-card">
+                <div class="promo-image" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop');"></div>
+                <div class="promo-content">
+                    <div class="promo-badge">Limited Time</div>
+                    <h2>Weekend Flash Deals</h2>
+                    <p>Save 30% on concerts, sports, and cinema tickets booked before Sunday midnight.</p>
+                    <div class="promo-details">
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">event</span>
+                            <span>Friday 4PM - Sunday 11:59PM</span>
+                        </div>
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">local_activity</span>
+                            <span>Use code: <strong>FLASH30</strong></span>
+                        </div>
+                    </div>
+                    <a href="events.html?promo=FLASH30" class="btn-primary">View Eligible Events</a>
+                </div>
+            </div>
+
+            <!-- Bundle & Save -->
+            <div class="promo-card">
+                <div class="promo-image" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=800&h=600&fit=crop');"></div>
+                <div class="promo-content">
+                    <div class="promo-badge">Best Value</div>
+                    <h2>Bundle & Save</h2>
+                    <p>Book two or more experiences in the same week and unlock an extra 20% discount.</p>
+                    <div class="promo-details">
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">redeem</span>
+                            <span>20% off on 2+ events</span>
+                        </div>
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">local_activity</span>
+                            <span>Use code: <strong>BUNDLE20</strong></span>
+                        </div>
+                    </div>
+                    <a href="events.html?promo=BUNDLE20" class="btn-primary">Start Bundling</a>
+                </div>
+            </div>
+
+            <!-- Student Rewards -->
+            <div class="promo-card">
+                <div class="promo-image" style="background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&h=600&fit=crop');"></div>
+                <div class="promo-content">
+                    <div class="promo-badge">Students Only</div>
+                    <h2>Student Rewards</h2>
+                    <p>Verify your student email and receive a SAR 50 promo code for select festivals.</p>
+                    <div class="promo-details">
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">school</span>
+                            <span>Valid student ID required</span>
+                        </div>
+                        <div class="promo-detail-item">
+                            <span class="material-symbols-rounded">payments</span>
+                            <span>SAR 50 credit</span>
+                        </div>
+                    </div>
+                    <a href="events.html?category=Festivals" class="btn-primary">Explore Festivals</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Terms Section -->
+        <section class="promotions-terms" data-animate="up">
+            <h3>Terms & Conditions</h3>
+            <ul>
+                <li>Promotions are available for online bookings only and cannot be combined unless specified.</li>
+                <li>Discounts apply automatically at checkout when you enter the promo code.</li>
+                <li>Limited availability - seats are allocated on a first-come, first-served basis.</li>
+                <li>Cancellations and refunds are subject to individual event policies.</li>
+                <li>Ticketo reserves the right to modify or cancel promotions at any time.</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Ticketo. All rights reserved.</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
